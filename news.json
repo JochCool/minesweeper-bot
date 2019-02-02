@@ -1,0 +1,7 @@
+{
+	"updates": [
+		{"name": "1.2", "description": "Improved error messages and added `!news` command."},
+		{"name": "1.1", "description": "Fixed issue where I sometimes didn't reply when you requested large games."},
+		{"name": "1.0", "description": "I was created."}
+	]
+}

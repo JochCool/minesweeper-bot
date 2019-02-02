@@ -13,13 +13,6 @@ function log(message) {
 
 log("Starting Minesweeper Bot version " + botVersion);
 
-// Lists updates for the !news command, from newest to oldest.
-const updates = [
-	{"name": "1.2", "description": "Improved error messages and added \"!news\" command."},
-	{"name": "1.1", "description": "Fixed issue where I sometimes didn't reply when you requested large games."},
-	{"name": "1.0", "description": "I was created."}
-];
-
 /** ───── BECOME A DISCORD BOT ───── **/
 // This section is to load the modules, initialize the bot and create some general functions
 
@@ -27,6 +20,7 @@ const updates = [
 const Discord = require('discord.js');
 const auth = require('./auth.json');
 const package = require('./package.json');
+const updates = require('./news.json').updates;
 
 log("All modules loaded");
 if (package.version != botVersion) {
@@ -388,7 +382,7 @@ const commands = new CommandArgument("root", prefix, null, [
 ]);
 commands.child[2].child = commands.child[1].child; // cheating here because aliases haven't been implemented yet
 
-// Gets called when you run the "!minesweeper" command
+// Gets called when you run the `!minesweeper` command
 function generateGame(gameWidth, gameHeight, numMines, message) {
 	
 	// Check game size
