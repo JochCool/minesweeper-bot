@@ -115,7 +115,7 @@ function executeCommand(message, command) {
 			
 			if (!inputAllowed) {
 				if (currentArgument == commands.child) {
-					message.channel.send("Unknown command. Type `" + prefix + "help` for a list of commands").catch(log);
+					//message.channel.send("Unknown command. Type `" + prefix + "help` for a list of commands").catch(log);
 					return;
 				}
 				else {
@@ -167,6 +167,7 @@ There are various types of arguments:
 - "literal" (you have to copy the name exactly)
 - "text" (you can fill in whatever text you want)
 - "number" (you have to fill in a valid number)
+- "integer" (you have to fill in a valid integer)
 - "date" (you have to fill in a valid Date, preferrably using ISO 8601 format)
 - "root" (not an argument, this is the first node in the tree)
 
@@ -234,12 +235,15 @@ CommandArgument.prototype.isInputAllowed = function(command) {
 		}
 		return false;
 	}
-	if (this.type == "number") {
+	if (this.type == "number" || this.type == "integer") {
 		let num = Number(input);
 		if (isNaN(num)) {
 			return false;
 		}
 		input = Number(input);
+		if (this.type == "integer" && input % 1 != 0) {
+			return false;
+		}
 		return true;
 	}
 	if (this.type == "date") {
@@ -363,9 +367,9 @@ const commands = new CommandArgument("root", prefix, null, [
 		return "You can execute the following commands:" + returnTxt;
 	}),
 	new CommandArgument("literal", "minesweeper", null,
-		new CommandArgument("number", "gameWidth", null, 
-			new CommandArgument("number", "gameHeight", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message),
-				new CommandArgument("number", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message))
+		new CommandArgument("integer", "gameWidth", null, 
+			new CommandArgument("integer", "gameHeight", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message),
+				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message))
 			)
 		)
 	),
