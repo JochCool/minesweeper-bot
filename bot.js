@@ -1,4 +1,4 @@
-const botVersion = "1.2";
+const botVersion = "1.3";
 
 // Most of this code is copied from my other project, Entrapment Bot, which is a private bot I use on my own Discord server:
 // https://github.com/JochCool/entrapment-bot
@@ -382,7 +382,8 @@ const commands = new CommandArgument("root", prefix, null, [
 			returnTxt += "\nVersion " + updates[i].name + " — " + updates[i].description;
 		}
 		return returnTxt;
-	})
+	}),
+	new CommandArgument("literal", "ping", () => "pong (" + client.ping + "ms)")
 ]);
 commands.child[2].child = commands.child[1].child; // cheating here because aliases haven't been implemented yet
 
