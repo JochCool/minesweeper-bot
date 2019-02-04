@@ -1,4 +1,4 @@
-const botVersion = "1.3";
+const botVersion = "1.4";
 
 // Most of this code is copied from my other project, Entrapment Bot, which is a private bot I use on my own Discord server:
 // https://github.com/JochCool/entrapment-bot
@@ -67,7 +67,7 @@ client.on('message', message => {
 		executeCommand(message, message.content.substring(prefix.length));
 	}
 	// legacy
-	else if (message.content.substring(0, 1) == '!') {
+	else if (message.content.startsWith('!')) {
 		executeCommand(message, message.content.substring(1));
 	}
 	
