@@ -1,5 +1,6 @@
 {
 	"updates": [
+		{"name": "1.4", "description": "Changed command prefix from `!` to `ms!`."},
 		{"name": "1.3", "description": "Removed unkown command message and added `!ping` command."},
 		{"name": "1.2", "description": "Improved error messages and added `!news` command."},
 		{"name": "1.1", "description": "Fixed issue where I sometimes didn't reply when you requested large games."},
