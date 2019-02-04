@@ -1,4 +1,4 @@
-const botVersion = "1.4";
+const botVersion = "1.3";
 
 // Most of this code is copied from my other project, Entrapment Bot, which is a private bot I use on my own Discord server:
 // https://github.com/JochCool/entrapment-bot
@@ -54,7 +54,7 @@ client.on('guildCreate', guild => {
 /** ───── MESSAGE PARSER ───── **/
 // This section is to evaluate you commands and reply to your messages
 
-const prefix = 'ms!';
+const prefix = '!';
 
 client.on('message', message => {
 	
@@ -63,11 +63,7 @@ client.on('message', message => {
 	}
 	
 	// Commands
-	if (message.content.startsWith(prefix)) {
-		executeCommand(message, message.content.substring(prefix.length));
-	}
-	// legacy
-	else if (message.content.startsWith('!')) {
+	if (message.content.substring(0, 1) == prefix) {
 		executeCommand(message, message.content.substring(1));
 	}
 	
@@ -117,12 +113,15 @@ function executeCommand(message, command) {
 				inputAllowed = currentArgument.isInputAllowed(command);
 			}
 			
-			// input type check failed
 			if (!inputAllowed) {
-				if (currentArgument != commands.child) {
-					message.channel.send("Invalid argument: `" + input + "`. Expected `" + syntax + "`.").catch(log);
+				if (currentArgument == commands.child) {
+					//message.channel.send("Unknown command. Type `" + prefix + "help` for a list of commands").catch(log);
+					return;
 				}
-				return;
+				else {
+					message.channel.send("Invalid argument: `" + input + "`. Expected `" + syntax + "`.").catch(log);
+					return;
+				}
 			}
 			
 			// add input to inputs list
@@ -141,13 +140,6 @@ function executeCommand(message, command) {
 				}
 				let commandResult = currentArgument.run(message, inputs);
 				if (typeof commandResult == "string" && commandResult.length > 0) {
-					
-					// legacy
-					if (message.content.substring(0, 1) == "!") {
-						commandResult += "\nNote: the `!` prefix is deprecated. In the future, I will only listen to the `ms!` prefix."
-					}
-					
-					// send result
 					message.channel.send(commandResult).catch(log);
 				}
 				break;
