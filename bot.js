@@ -187,7 +187,7 @@ function CommandArgument(type, name, runFunction, child) {
 };
 
 CommandArgument.prototype.hasChildren = function() {
-	return this.chilc instanceof CommandArgument || Array.isArray(this.child) && this.child.length > 0;
+	return this.child instanceof CommandArgument || Array.isArray(this.child) && this.child.length > 0;
 };
 
 // Returns whether or not the first input in the command string is a valid input for this argument
@@ -332,7 +332,7 @@ CommandArgument.prototype.getChildSyntax = function(withChildren) {
 
 // Returns an array of all possible child syntaxes (including the children of the children)
 CommandArgument.prototype.getAllChildSyntaxes = function() {
-	if (!this.child) {
+	if (!this.hasChildren) {
 		return [""];
 	}
 	let syntaxes = [];
