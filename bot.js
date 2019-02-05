@@ -18,6 +18,7 @@ log("Starting Minesweeper Bot version " + botVersion);
 
 // Load everything
 const Discord = require('discord.js');
+const DBLAPI = require('dblapi.js');
 const auth = require('./auth.json');
 const package = require('./package.json');
 const updates = require('./news.json').updates;
@@ -29,7 +30,11 @@ if (package.version != botVersion) {
 
 // Initialize Discord Bot
 const client = new Discord.Client();
-client.login(auth.token).catch(log);
+client.login(auth.bottoken).catch(log);
+
+// Initalize connetion with DBLAPI (discordbots.org)
+const dbl = new DBL(auth.dbltoken, client);
+dbl.on('error', log);
 
 // Misc event handlers
 
