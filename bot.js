@@ -462,8 +462,8 @@ function generateGame(gameWidth, gameHeight, numMines, message) {
 	
 	// Create the reply
 	let returnTxt;
-	if (numMines === 1) { returnTxt = "Here's a board with 1 mine:"; }
-	else 		  { returnTxt = "Here's a board with " + numMines + " mines:"; }
+	if (numMines === 1) { returnTxt = "Here's board sized " + gameWidth + "x" + gameHeight " with 1 mine:"; }
+	else 		  { returnTxt = "Here's a board sized " + gameWidth + "x" + gameHeight " with " + numMines + " mines:"; }
 	
 	for (var y = 0; y < game.length; y++) {
 		returnTxt += "\n"
