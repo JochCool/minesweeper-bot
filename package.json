@@ -1,7 +1,7 @@
 {
   "id": "540917634695168010",
   "name": "Minesweeper Bot",
-  "version": "1.4",
+  "version": "1.5",
   "description": "I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! Use the command \"!minesweeper\" or \"!ms\" to generate a game!\nCreated by @JochCool#1314.",
   "main": "bot.js",
   "author": "JochCool",
