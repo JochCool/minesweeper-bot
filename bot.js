@@ -1,4 +1,4 @@
-const botVersion = "1.3";
+const botVersion = "1.5";
 
 // Most of this code is copied from my other project, Entrapment Bot, which is a private bot I use on my own Discord server:
 // https://github.com/JochCool/entrapment-bot
