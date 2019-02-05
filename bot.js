@@ -274,7 +274,7 @@ CommandArgument.prototype.isInputAllowed = function(command) {
 
 // Returns the syntax of this argument's child, properly formatted.
 CommandArgument.prototype.getChildSyntax = function(withChildren) {
-	if (!this.hasChildren) {
+	if (!this.hasChildren()) {
 		return "";
 	}
 	let syntax = "";
