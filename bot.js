@@ -395,6 +395,7 @@ const commands = new CommandArgument("root", prefix, null, [
 	new CommandArgument("literal", "ping", () => "pong (" + client.ping + "ms)")
 ]);
 commands.child[2].child = commands.child[1].child; // cheating here because aliases haven't been implemented yet
+commands.child[2].run = commands.child[1].run;
 
 // Gets called when you run the `!minesweeper` command
 function generateGame(gameWidth, gameHeight, numMines, message) {
@@ -462,8 +463,8 @@ function generateGame(gameWidth, gameHeight, numMines, message) {
 	
 	// Create the reply
 	let returnTxt;
-	if (numMines === 1) { returnTxt = "Here's board sized " + gameWidth + "x" + gameHeight " with 1 mine:"; }
-	else 		  { returnTxt = "Here's a board sized " + gameWidth + "x" + gameHeight " with " + numMines + " mines:"; }
+	if (numMines === 1) { returnTxt = "Here's a board sized " + gameWidth + "x" + gameHeight + " with 1 mine:"; }
+	else                { returnTxt = "Here's a board sized " + gameWidth + "x" + gameHeight + " with " + numMines + " mines:"; }
 	
 	for (var y = 0; y < game.length; y++) {
 		returnTxt += "\n"
