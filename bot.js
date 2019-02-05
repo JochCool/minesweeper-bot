@@ -186,6 +186,10 @@ function CommandArgument(type, name, runFunction, child) {
 	this.child = child;
 };
 
+CommandArgument.prototype.hasChildren = function() {
+	return this.chilc instanceof CommandArgument || Array.isArray(this.child) && this.child.length > 0;
+};
+
 // Returns whether or not the first input in the command string is a valid input for this argument
 CommandArgument.prototype.isInputAllowed = function(command) {
 	if (command == "") {
@@ -270,7 +274,7 @@ CommandArgument.prototype.isInputAllowed = function(command) {
 
 // Returns the syntax of this argument's child, properly formatted.
 CommandArgument.prototype.getChildSyntax = function(withChildren) {
-	if (typeof this.child != "object") {
+	if (!this.hasChildren) {
 		return "";
 	}
 	let syntax = "";
@@ -313,7 +317,7 @@ CommandArgument.prototype.getChildSyntax = function(withChildren) {
 				syntax += " ...";
 			}
 		}
-		else {
+		else if (this.child.hasChildren()) {
 			syntax += " " + this.child.getChildSyntax(true);
 		}
 	}
@@ -323,7 +327,7 @@ CommandArgument.prototype.getChildSyntax = function(withChildren) {
 		syntax = "[" + syntax + "]";
 	}
 	
-	return syntax.trim();
+	return syntax;
 };
 
 // Returns an array of all possible child syntaxes (including the children of the children)
