@@ -1,4 +1,4 @@
-const botVersion = "1.5";
+const botVersion = "1.5.1";
 
 // Most of this code is copied from my other project, Entrapment Bot, which is a private bot I use on my own Discord server:
 // https://github.com/JochCool/entrapment-bot
@@ -33,7 +33,7 @@ const client = new Discord.Client();
 client.login(auth.bottoken).catch(log);
 
 // Initalize connetion with DBLAPI (discordbots.org)
-const dbl = new DBL(auth.dbltoken, client);
+const dbl = new DBLAPI(auth.dbltoken, client);
 dbl.on('error', log);
 
 // Misc event handlers
