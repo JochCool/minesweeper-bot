@@ -332,7 +332,7 @@ CommandArgument.prototype.getChildSyntax = function(withChildren) {
 
 // Returns an array of all possible child syntaxes (including the children of the children)
 CommandArgument.prototype.getAllChildSyntaxes = function() {
-	if (!this.hasChildren) {
+	if (!this.hasChildren()) {
 		return [""];
 	}
 	let syntaxes = [];
@@ -509,4 +509,3 @@ function generateGame(gameWidth, gameHeight, numMines, message) {
 };
 
 const numberEmoji = [":zero:", ":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":nine:"];
-
