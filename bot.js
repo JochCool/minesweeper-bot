@@ -375,9 +375,9 @@ const commands = new CommandArgument("root", prefix, null, [
 		}
 		return "You can execute the following commands:" + returnTxt;
 	}),
-	new CommandArgument("literal", "minesweeper", (message, inputs) => generateGame( , , , message),
+	new CommandArgument("literal", "minesweeper", (message, inputs) => generateGame(undefined, undefined, undefined, message),
 		new CommandArgument("integer", "gameWidth", null, 
-			new CommandArgument("integer", "gameHeight", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, , message),
+			new CommandArgument("integer", "gameHeight", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message),
 				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message))
 			)
 		)
