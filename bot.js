@@ -275,6 +275,8 @@ CommandArgument.prototype.getChildSyntax = function(withChildren) {
 	}
 	let syntax = "";
 	let childrenHaveChildren = false;
+	
+	// Multiple children: loop through them
 	if (Array.isArray(this.child)) {
 		syntax += "(";
 		for (var i = 0; i < this.child.length; i++) {
@@ -293,6 +295,8 @@ CommandArgument.prototype.getChildSyntax = function(withChildren) {
 		}
 		syntax += ")";
 	}
+	
+	// Single child
 	else {
 		if (this.child.type == "literal") {
 			syntax += this.child.name;
@@ -301,9 +305,8 @@ CommandArgument.prototype.getChildSyntax = function(withChildren) {
 			syntax += "<" + this.child.name + ">";
 		}
 	}
-	if (this.run) {
-		syntax = "[" + syntax + "]";
-	}
+	
+	// Add children's syntax if input was true
 	if (withChildren) {
 		if (Array.isArray(this.child)) {
 			if (childrenHaveChildren) {
@@ -314,6 +317,12 @@ CommandArgument.prototype.getChildSyntax = function(withChildren) {
 			syntax += " " + this.child.getChildSyntax(true);
 		}
 	}
+	
+	// Children are optional
+	if (this.run) {
+		syntax = "[" + syntax + "]";
+	}
+	
 	return syntax.trim();
 };
 
@@ -366,9 +375,9 @@ const commands = new CommandArgument("root", prefix, null, [
 		}
 		return "You can execute the following commands:" + returnTxt;
 	}),
-	new CommandArgument("literal", "minesweeper", null,
+	new CommandArgument("literal", "minesweeper", (message, inputs) => generateGame( , , , message),
 		new CommandArgument("integer", "gameWidth", null, 
-			new CommandArgument("integer", "gameHeight", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message),
+			new CommandArgument("integer", "gameHeight", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, , message),
 				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message))
 			)
 		)
@@ -391,10 +400,16 @@ commands.child[2].child = commands.child[1].child; // cheating here because alia
 function generateGame(gameWidth, gameHeight, numMines, message) {
 	
 	// Check game size
-	if (gameWidth <= 0 || gameHeight <= 0) {
+	if (isNaN(gameWidth)) {
+		gameWidth = 8;
+	}
+	else if (gameWidth <= 0 || gameHeight <= 0) {
 		return "Uh, I'm not smart enough to generate a maze of that size. I can only use positive numbers. Sorry :cry:";
 	}
-	if (gameWidth > 40 || gameHeight > 20) {
+	if (isNaN(gameHeight)) {
+		gameHeight = 8;
+	}
+	else if (gameWidth > 40 || gameHeight > 20) {
 		return "That's way too large! Think of all the mobile users who are going to see this!";
 	}
 	
