@@ -1,4 +1,4 @@
-const botVersion = "1.3";
+const botVersion = "1.5";
 
 // Most of this code is copied from my other project, Entrapment Bot, which is a private bot I use on my own Discord server:
 // https://github.com/JochCool/entrapment-bot
@@ -186,6 +186,10 @@ function CommandArgument(type, name, runFunction, child) {
 	this.child = child;
 };
 
+CommandArgument.prototype.hasChildren = function() {
+	return this.child instanceof CommandArgument || Array.isArray(this.child) && this.child.length > 0;
+};
+
 // Returns whether or not the first input in the command string is a valid input for this argument
 CommandArgument.prototype.isInputAllowed = function(command) {
 	if (command == "") {
@@ -270,11 +274,13 @@ CommandArgument.prototype.isInputAllowed = function(command) {
 
 // Returns the syntax of this argument's child, properly formatted.
 CommandArgument.prototype.getChildSyntax = function(withChildren) {
-	if (typeof this.child != "object") {
+	if (!this.hasChildren()) {
 		return "";
 	}
 	let syntax = "";
 	let childrenHaveChildren = false;
+	
+	// Multiple children: loop through them
 	if (Array.isArray(this.child)) {
 		syntax += "(";
 		for (var i = 0; i < this.child.length; i++) {
@@ -293,6 +299,8 @@ CommandArgument.prototype.getChildSyntax = function(withChildren) {
 		}
 		syntax += ")";
 	}
+	
+	// Single child
 	else {
 		if (this.child.type == "literal") {
 			syntax += this.child.name;
@@ -301,25 +309,30 @@ CommandArgument.prototype.getChildSyntax = function(withChildren) {
 			syntax += "<" + this.child.name + ">";
 		}
 	}
-	if (this.run) {
-		syntax = "[" + syntax + "]";
-	}
+	
+	// Add children's syntax if input was true
 	if (withChildren) {
 		if (Array.isArray(this.child)) {
 			if (childrenHaveChildren) {
 				syntax += " ...";
 			}
 		}
-		else {
+		else if (this.child.hasChildren()) {
 			syntax += " " + this.child.getChildSyntax(true);
 		}
 	}
-	return syntax.trim();
+	
+	// Children are optional
+	if (this.run) {
+		syntax = "[" + syntax + "]";
+	}
+	
+	return syntax;
 };
 
 // Returns an array of all possible child syntaxes (including the children of the children)
 CommandArgument.prototype.getAllChildSyntaxes = function() {
-	if (!this.child) {
+	if (!this.hasChildren()) {
 		return [""];
 	}
 	let syntaxes = [];
@@ -366,7 +379,7 @@ const commands = new CommandArgument("root", prefix, null, [
 		}
 		return "You can execute the following commands:" + returnTxt;
 	}),
-	new CommandArgument("literal", "minesweeper", null,
+	new CommandArgument("literal", "minesweeper", (message, inputs) => generateGame(undefined, undefined, undefined, message),
 		new CommandArgument("integer", "gameWidth", null, 
 			new CommandArgument("integer", "gameHeight", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message),
 				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message))
@@ -374,7 +387,7 @@ const commands = new CommandArgument("root", prefix, null, [
 		)
 	),
 	new CommandArgument("literal", "ms", null),
-	new CommandArgument("literal", "info", () => "Hello, I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! To generate a new minesweeper game, use the `!minesweeper` command (or its alias `!ms`):\n```\n!minesweeper <gameWidth> <gameHeight> [<numMines>]\n````gameWidth` and `gameHeight` tell me how many squares the game should be wide and tall, for a maximum of 40x20.\n`numMines` is how many mines there should be in the game, the more mines the more difficult it is. If omitted, I will pick a number based on the size of the game.\nWhen you run this command, I will reply with a grid of spoiler tags. Click a spoiler tag to open the square and see if there's a mine inside!\n\nIf you don't know how to play Minesweeper, get out of the rock you've been living under and use the `!howtoplay` command. For a list of all commands and their syntaxes, use `!help`.\n\nMy creator is @JochCool#1314 and I'm at version " + botVersion + ". If you have any questions or other remarks, you can DM him. Furthermore, my source code is available on GitHub, for those interested: https://github.com/JochCool/minesweeper-bot. You can submit bug reports and feature requests there.\nNote: sometimes you might not get a response from me when you run a command. Then that's probably because I'm temporarily offline, in which case please DM JochCool so he can fix it.\n\nThank you for using me!"),
+	new CommandArgument("literal", "info", () => "Hello, I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! To generate a new minesweeper game, use the `!minesweeper` command (or its alias `!ms`):\n```\n!minesweeper [<gameWidth> <gameHeight> [<numMines>]]\n````gameWidth` and `gameHeight` tell me how many squares the game should be wide and tall, for a maximum of 40x20. If omitted, it will be 8x8.\n`numMines` is how many mines there should be in the game, the more mines the more difficult it is. If omitted, I will pick a number based on the size of the game.\nWhen you run this command, I will reply with a grid of spoiler tags. Click a spoiler tag to open the square and see if there's a mine inside!\n\nIf you don't know how to play Minesweeper, get out of the rock you've been living under and use the `!howtoplay` command. For a list of all commands and their syntaxes, use `!help`.\n\nMy creator is @JochCool#1314 and I'm at version " + botVersion + ". If you have any questions or other remarks, you can DM him. Furthermore, my source code is available on GitHub, for those interested: https://github.com/JochCool/minesweeper-bot. You can submit bug reports and feature requests there.\nNote: sometimes you might not get a response from me when you run a command. Then that's probably because I'm temporarily offline, in which case please DM JochCool so he can fix it.\n\nThank you for using me!"),
 	new CommandArgument("literal", "howtoplay", () => "In Minesweeper, you get a rectangular grid of squares. In some of those squares, mines are hidden, but you don't know which squares. The objective is 'open' all the squares that don't have a hidden mine, but to not touch the ones that do.\n\nLet's start with an example. " + generateGame(5, 5, 3) + "\n\nTo open a mine, click the spoiler tag. So go click one now. The contents of that square will be revealed when you do so. If it's a mine (:bomb:), you lose! If it's not a mine, you get a mysterious number instead, like :two:. This number is there to help you, as it indicates how many mines are in the eight squares that touch it (horizontally, vertically or diagonally). Using this information and some good logic, you can figure out the location of most of the mines!\n\nYes, sometimes it's impossible to know which square is a mine; in that case you'll have to guess. But you can usually get very far if you've praciced enough, so go try it out! Use the `!minesweeper` command to generate a new random game."),
 	new CommandArgument("literal", "news", () => {
 		let returnTxt = "These were my past three updates:\n";
@@ -386,15 +399,22 @@ const commands = new CommandArgument("root", prefix, null, [
 	new CommandArgument("literal", "ping", () => "pong (" + client.ping + "ms)")
 ]);
 commands.child[2].child = commands.child[1].child; // cheating here because aliases haven't been implemented yet
+commands.child[2].run = commands.child[1].run;
 
 // Gets called when you run the `!minesweeper` command
 function generateGame(gameWidth, gameHeight, numMines, message) {
 	
 	// Check game size
-	if (gameWidth <= 0 || gameHeight <= 0) {
+	if (isNaN(gameWidth)) {
+		gameWidth = 8;
+	}
+	else if (gameWidth <= 0 || gameHeight <= 0) {
 		return "Uh, I'm not smart enough to generate a maze of that size. I can only use positive numbers. Sorry :cry:";
 	}
-	if (gameWidth > 40 || gameHeight > 20) {
+	if (isNaN(gameHeight)) {
+		gameHeight = 8;
+	}
+	else if (gameWidth > 40 || gameHeight > 20) {
 		return "That's way too large! Think of all the mobile users who are going to see this!";
 	}
 	
@@ -447,8 +467,8 @@ function generateGame(gameWidth, gameHeight, numMines, message) {
 	
 	// Create the reply
 	let returnTxt;
-	if (numMines === 1) { returnTxt = "Here's a board with 1 mine:"; }
-	else 		  { returnTxt = "Here's a board with " + numMines + " mines:"; }
+	if (numMines === 1) { returnTxt = "Here's a board sized " + gameWidth + "x" + gameHeight + " with 1 mine:"; }
+	else                { returnTxt = "Here's a board sized " + gameWidth + "x" + gameHeight + " with " + numMines + " mines:"; }
 	
 	for (var y = 0; y < game.length; y++) {
 		returnTxt += "\n"
@@ -489,4 +509,3 @@ function generateGame(gameWidth, gameHeight, numMines, message) {
 };
 
 const numberEmoji = [":zero:", ":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":nine:"];
-
