@@ -88,7 +88,8 @@ function executeCommand(message, command) {
 		
 		// No new lines allowed
 		if (command.indexOf('\n') >= 0) {
-			throw new CommandResult(false, "Please keep your command on one line!");
+			message.channel.send("Please keep your command on one line!").catch(log);
+			return;
 		}
 		
 		// init
@@ -215,8 +216,9 @@ CommandArgument.prototype.isInputAllowed = function(command) {
 	// Quotes
 	if (input.startsWith('"')) {
 		thisInputEnd = input.slice(1).indexOf('"')+2;
-		if (thisInputEnd < 0) {
-			throw new CommandResult(false, "Please close your string!");
+		if (thisInputEnd == 1) {
+			input = input.slice(1);
+			return false;
 		}
 		input = input.slice(1, thisInputEnd-1);
 	}
@@ -380,7 +382,7 @@ const commands = new CommandArgument("root", prefix, null, [
 			returnTxt += "\n• `" + prefix + commands.child[i].name + " " + commands.child[i].getChildSyntax(true) + "`";
 		}
 		if (returnTxt == "") {
-			return new CommandResult(false, "You cannot execute any commands!");
+			return "You cannot execute any commands!";
 		}
 		return "You can execute the following commands:" + returnTxt;
 	}),
