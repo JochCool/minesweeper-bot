@@ -72,11 +72,14 @@ client.on('message', message => {
 		executeCommand(message, message.content.substring(1));
 	}
 	
-	else if (message.content.toLowerCase().startsWith("good bot")) {
-		message.channel.send("Thank you!").catch(log);
-	}
-	else if (message.content.toLowerCase().startsWith("bad bot")) {
-		message.channel.send(":(").catch(log);
+	// "Good bot" and "Bad bot" (with an exception for the DBL server)
+	else if (!message.guild || message.guild.id = 264445053596991498) {
+		if (message.content.toLowerCase().startsWith("good bot")) {
+			message.channel.send("Thank you!").catch(log);
+		}
+		else if (message.content.toLowerCase().startsWith("bad bot")) {
+			message.channel.send(":(").catch(log);
+		}
 	}
 });
 
