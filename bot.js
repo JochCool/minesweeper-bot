@@ -89,12 +89,6 @@ function executeCommand(message, command) {
 	try {
 		//log("Executing command: "+command);
 		
-		// No new lines allowed
-		if (command.indexOf('\n') >= 0) {
-			message.channel.send("Please keep your command on one line!").catch(log);
-			return;
-		}
-		
 		// init
 		let currentArgument = commands;
 		let inputs = {};
@@ -222,9 +216,20 @@ CommandArgument.prototype.isInputAllowed = function(command) {
 		input = input.slice(1, thisInputEnd-1);
 	}
 	
-	// Spaces
+	// Spaces / new lines
 	else if (this.child) {
-		thisInputEnd = command.indexOf(' ');
+		// Find the first space or new line
+		let nextSpace = command.indexOf(' '), nextNewLine = command.indexOf('\n');
+		if (nextSpace == -1) {
+			thisInputEnd = nextNewLine;
+		}
+		else if (nextNewLine >= 0) {
+			thisInputEnd = Math.min(nextSpace, nextNewLine);
+		}
+		else {
+			thisInputEnd = nextSpace;
+		}
+		
 		if (thisInputEnd >= 0) {
 			input = command.substring(0, thisInputEnd);
 		}
