@@ -73,7 +73,7 @@ client.on('message', message => {
 	}
 	
 	// "Good bot" and "Bad bot" (with an exception for the DBL server)
-	else if (!message.guild || message.guild.id = 264445053596991498) {
+	else if (!message.guild || message.guild.id == 264445053596991498) {
 		if (message.content.toLowerCase().startsWith("good bot")) {
 			message.channel.send("Thank you!").catch(log);
 		}
