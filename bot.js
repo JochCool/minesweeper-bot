@@ -1,4 +1,4 @@
-const botVersion = "1.5.2";
+const botVersion = "1.5.3";
 
 // Most of this code is copied from my other project, Entrapment Bot, which is a private bot I use on my own Discord server:
 // https://github.com/JochCool/entrapment-bot
@@ -36,11 +36,26 @@ client.login(auth.bottoken).catch(log);
 const dbl = new DBLAPI(auth.dbltoken, client);
 dbl.on('error', log);
 
+// setup to logging number of commands executed this hour
+var commandsThisHour = 0;
+function logCommandsThisHour() {
+	log("Num executed commands this hour: " + commandsThisHour);
+	commandsThisHour = 0;
+	client.setTimeout(logCommandsThisHour, getTimeUntilNextHour());
+};
+function getTimeUntilNextHour() {
+	let now = new Date();
+	return (59 - now.getMinutes())*60000 + (59 - now.getSeconds())*1000 + 1000 - now.getMilliseconds
+}
+
 // Misc event handlers
 
 client.on('ready', () => {
 	log("Ready!");
 	client.user.setActivity("Minesweeper", {"type": "PLAYING"}).catch(log);
+	
+	// Set timeout for next report on num commands
+	client.setTimeout(logCommandsThisHour, getTimeUntilNextHour());
 });
 
 client.on('disconnected', function() {
@@ -133,6 +148,7 @@ function executeCommand(message, command) {
 			
 			// last input; run the command
 			if (thisInputEnd < 0 || command == "" || !currentArgument.child) {
+				commandsThisHour++;
 				if (!currentArgument.run) {
 					message.channel.send("You're missing one or more required arguments: `" + currentArgument.getChildSyntax(true) + "`.").catch(log);
 					return;
@@ -147,6 +163,7 @@ function executeCommand(message, command) {
 	}
 	catch (err) {
 		log(err);
+		commandsThisHour++;
 		message.channel.send("An unknown error occurred while evaluating your command.").catch(log);
 	}
 };
