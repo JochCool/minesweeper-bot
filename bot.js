@@ -1,4 +1,4 @@
-const botVersion = "1.5.3";
+const botVersion = "1.6";
 
 // Most of this code is copied from my other project, Entrapment Bot, which is a private bot I use on my own Discord server:
 // https://github.com/JochCool/entrapment-bot
@@ -45,7 +45,7 @@ function logCommandsThisHour() {
 };
 function getTimeUntilNextHour() {
 	let now = new Date();
-	return (59 - now.getMinutes())*60000 + (59 - now.getSeconds())*1000 + 1000 - now.getMilliseconds
+	return (59 - now.getMinutes())*60000 + (59 - now.getSeconds())*1000 + 1000 - now.getMilliseconds()
 }
 
 // Misc event handlers
