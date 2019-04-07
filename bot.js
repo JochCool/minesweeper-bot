@@ -414,7 +414,9 @@ const commands = new CommandArgument("root", prefix, null, [
 	new CommandArgument("literal", "minesweeper", (message, inputs) => generateGame(undefined, undefined, undefined, message),
 		new CommandArgument("integer", "gameWidth", null, 
 			new CommandArgument("integer", "gameHeight", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message),
-				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message))
+				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message),
+					new CommandArgument("literal", "raw", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true))
+				)
 			)
 		)
 	),
@@ -434,7 +436,7 @@ commands.child[2].child = commands.child[1].child; // cheating here because alia
 commands.child[2].run = commands.child[1].run;
 
 // Gets called when you run the `!minesweeper` command
-function generateGame(gameWidth, gameHeight, numMines, message) {
+function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 	
 	// Check game size
 	if (isNaN(gameWidth)) {
@@ -502,6 +504,8 @@ function generateGame(gameWidth, gameHeight, numMines, message) {
 	if (numMines === 1) { returnTxt = "Here's a board sized " + gameWidth + "x" + gameHeight + " with 1 mine:"; }
 	else                { returnTxt = "Here's a board sized " + gameWidth + "x" + gameHeight + " with " + numMines + " mines:"; }
 	
+	if (isRaw) { returnTxt += "\n```"; }
+	
 	for (var y = 0; y < game.length; y++) {
 		returnTxt += "\n"
 		for (var x = 0; x < game[y].length; x++) {
@@ -513,6 +517,8 @@ function generateGame(gameWidth, gameHeight, numMines, message) {
 			}
 		}
 	}
+	
+	if (isRaw) { returnTxt += "\n```"; }
 	
 	// Send the message if it's not longer than 2000 chars (Discord's limit)
 	if (returnTxt.length <= 2000) {
