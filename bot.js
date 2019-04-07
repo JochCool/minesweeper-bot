@@ -45,7 +45,7 @@ function logCommandsThisHour() {
 };
 function getTimeUntilNextHour() {
 	let now = new Date();
-	return (59 - now.getMinutes())*60000 + (59 - now.getSeconds())*1000 + 1000 - now.getMilliseconds()
+	return (59 - now.getMinutes())*60000 + (60 - now.getSeconds())*1000;
 }
 
 // Misc event handlers
