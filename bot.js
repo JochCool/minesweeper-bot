@@ -1,6 +1,6 @@
 const botVersion = "1.6";
 
-// Most of this code is copied from my other project, Entrapment Bot, which is a private bot I use on my own Discord server:
+// A portion of this code is copied from my other project, Entrapment Bot, which is a private bot I use on my own Discord server:
 // https://github.com/JochCool/entrapment-bot
 
 // Replacement of console.log
@@ -46,16 +46,15 @@ function logCommandsThisHour() {
 function getTimeUntilNextHour() {
 	let now = new Date();
 	return (59 - now.getMinutes())*60000 + (60 - now.getSeconds())*1000;
-}
+};
+
+client.setTimeout(logCommandsThisHour, getTimeUntilNextHour());
 
 // Misc event handlers
 
 client.on('ready', () => {
 	log("Ready!");
 	client.user.setActivity("Minesweeper", {"type": "PLAYING"}).catch(log);
-	
-	// Set timeout for next report on num commands
-	client.setTimeout(logCommandsThisHour, getTimeUntilNextHour());
 });
 
 client.on('disconnected', function() {
