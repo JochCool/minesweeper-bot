@@ -441,8 +441,8 @@ const commands = new CommandArgument("root", prefix, null, [
 // cheating here because aliases haven't been implemented yet
 commands.child[2].child = commands.child[1].child;
 commands.child[2].run = commands.child[1].run;
-commands.child[4].child = commands.child[4].child;
-commands.child[4].run = commands.child[4].run;
+commands.child[4].child = commands.child[3].child;
+commands.child[4].run = commands.child[3].run;
 
 // Gets called when you run the `!minesweeper` command
 function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
