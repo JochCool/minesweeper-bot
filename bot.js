@@ -413,13 +413,19 @@ const commands = new CommandArgument("root", prefix, null, [
 	new CommandArgument("literal", "minesweeper", (message, inputs) => generateGame(undefined, undefined, undefined, message),
 		new CommandArgument("integer", "gameWidth", null, 
 			new CommandArgument("integer", "gameHeight", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message),
-				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message),
-					new CommandArgument("literal", "raw", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true))
-				)
+				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message))
 			)
 		)
 	),
 	new CommandArgument("literal", "ms", null),
+	new CommandArgument("literal", "minesweeperraw", (message, inputs) => generateGame(undefined, undefined, undefined, message, true),
+		new CommandArgument("integer", "gameWidth", null, 
+			new CommandArgument("integer", "gameHeight", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message, true),
+				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true))
+			)
+		)
+	),
+	new CommandArgument("literal", "msraw", null),
 	new CommandArgument("literal", "info", () => "Hello, I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! To generate a new minesweeper game, use the `!minesweeper` command (or its alias `!ms`):\n```\n!minesweeper [<gameWidth> <gameHeight> [<numMines>]]\n````gameWidth` and `gameHeight` tell me how many squares the game should be wide and tall, for a maximum of 40x20. If omitted, it will be 8x8.\n`numMines` is how many mines there should be in the game, the more mines the more difficult it is. If omitted, I will pick a number based on the size of the game.\nWhen you run this command, I will reply with a grid of spoiler tags. Click a spoiler tag to open the square and see if there's a mine inside!\n\nIf you don't know how to play Minesweeper, get out of the rock you've been living under and use the `!howtoplay` command. For a list of all commands and their syntaxes, use `!help`.\n\nI'm at version " + botVersion + " and my creator is @JochCool#1314. If you have any questions or other remarks, you can DM him. Furthermore, my source code is available on GitHub, for those interested: https://github.com/JochCool/minesweeper-bot. You can submit bug reports and feature requests there.\nNote: sometimes you might not get a response from me when you run a command. Then that's probably because I'm temporarily offline, in which case please DM JochCool so he can fix it.\n\nThank you for using me!"),
 	new CommandArgument("literal", "howtoplay", () => "In Minesweeper, you get a rectangular grid of squares. In some of those squares, mines are hidden, but you don't know which squares. The objective is 'open' all the squares that don't have a hidden mine, but to not touch the ones that do.\n\nLet's start with an example. " + generateGame(5, 5, 3) + "\n\nTo open a mine, click the spoiler tag. So go click one now. The contents of that square will be revealed when you do so. If it's a mine (:bomb:), you lose! If it's not a mine, you get a mysterious number instead, like :two:. This number is there to help you, as it indicates how many mines are in the eight squares that touch it (horizontally, vertically or diagonally). Using this information and some good logic, you can figure out the location of most of the mines!\n\nYes, sometimes it's impossible to know which square is a mine; in that case you'll have to guess. But you can usually get very far if you've praciced enough, so go try it out! Use the `!minesweeper` command to generate a new random game."),
 	new CommandArgument("literal", "news", () => {
@@ -431,8 +437,12 @@ const commands = new CommandArgument("root", prefix, null, [
 	}),
 	new CommandArgument("literal", "ping", () => "pong (" + client.ping + "ms)")
 ]);
-commands.child[2].child = commands.child[1].child; // cheating here because aliases haven't been implemented yet
+
+// cheating here because aliases haven't been implemented yet
+commands.child[2].child = commands.child[1].child;
 commands.child[2].run = commands.child[1].run;
+commands.child[4].child = commands.child[4].child;
+commands.child[4].run = commands.child[4].run;
 
 // Gets called when you run the `!minesweeper` command
 function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
