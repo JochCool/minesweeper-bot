@@ -14,6 +14,8 @@ When you run this command, I will reply with a grid of spoiler tags. Click a spo
 ## Other Commands
 Here's the other commands I listen to:
 * `!ms` — alias of `!minesweeper`.
+* `!minesweeperraw` — same as `!minesweeper`, but it gives you the raw text/copypasta so you can share the game.
+* `!msraw` — alias of `!minesweeperraw`.
 * `!help` — shows this list of commands.
 * `!info` — displays info about me.
 * `!howtoplay` — displays a tutorial about how to play the game.
