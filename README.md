@@ -20,7 +20,7 @@ Here's the other commands I listen to:
 * `!info` — displays info about me.
 * `!howtoplay` — displays a tutorial about how to play the game.
 * `!news` — displays info about my latest updates.
-* `!setprefix` — allows you to change the prefix of all my commands.
+* `!setprefix` — allows you to change the prefix of all my commands. Requires Manage Server permission to execute.
 * `!ping` — displays my heartbeat ping.
 
 ## Other info
