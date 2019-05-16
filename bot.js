@@ -443,9 +443,10 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 			if (inputs.prefix.length == 0) {
 				return "The prefix must be at least one character long.";
 			}
+			let prevprefix = getPrefixForGuild(message.guild.id);
 			guildprefixes[message.guild.id] = inputs.prefix;
 			fs.writeFile("guildprefixes.json", JSON.stringify(guildprefixes, null, 4), err => { if (err) { log(err); } });
-			return "The prefix of this server has been changed to `" + inputs.prefix + "`.";
+			return "The prefix of this server has been changed from `" + prevprefix + "` to `" + inputs.prefix + "`.";
 		})
 	)
 	new CommandArgument("literal", "ping", () => "pong (" + client.ping + "ms)")
