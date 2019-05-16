@@ -20,7 +20,8 @@ Here's the other commands I listen to:
 * `!info` — displays info about me.
 * `!howtoplay` — displays a tutorial about how to play the game.
 * `!news` — displays info about my latest updates.
-* `!ping` — displays the heartbeat ping of the bot.
+* `!setprefix` — allows you to change the prefix of all my commands.
+* `!ping` — displays my heartbeat ping.
 
 ## Other info
 My creator is @JochCool#1314. If you have any questions or other remarks, you can DM him. You can submit bug reports and feature requests on the GitHub page.
