@@ -77,23 +77,13 @@ const prefix = '!';
 
 client.on('message', message => {
 	
-	if (message.author.bot) {
+	if (!message.guild.available || message.author.bot) {
 		return;
 	}
 	
 	// Commands
-	if (message.content.substring(0, 1) == prefix) {
-		executeCommand(message, message.content.substring(1));
-	}
-	
-	// "Good bot" and "Bad bot" (with an exception for the DBL guild)
-	else if (!message.guild || message.guild.id != 264445053596991498) {
-		if (message.content.toLowerCase().startsWith("good bot")) {
-			message.channel.send("Thank you!").catch(log);
-		}
-		else if (message.content.toLowerCase().startsWith("bad bot")) {
-			message.channel.send(":(").catch(log);
-		}
+	if (message.content.startsWith(prefix) && message.guild.me.hasPermission("SEND_MESSAGES")) {
+		executeCommand(message, message.content.substring(prefix.length));
 	}
 });
 
