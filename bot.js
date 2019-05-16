@@ -19,9 +19,11 @@ log("Starting Minesweeper Bot version " + botVersion);
 // Load everything
 const Discord = require('discord.js');
 const DBLAPI = require('dblapi.js');
+const fs = require('fs');
 const auth = require('./auth.json');
 const package = require('./package.json');
 const updates = require('./news.json').updates;
+var guildprefixes = require('./guildprefixes.json');
 
 log("All modules loaded");
 if (package.version != botVersion) {
@@ -425,6 +427,19 @@ const commands = new CommandArgument("root", prefix, null, [
 		}
 		return returnTxt;
 	}),
+	new CommandArgument("literal", "setprefix", null, 
+		new CommandArgument("text", "prefix", (message, inputs) => {
+			if (!message.member.hasPermission("MANAGE_GUILD")) {
+				return "You need the Manage Server permission to change the prefix.";
+			}
+			if (inputs.prefix.length == 0) {
+				return "The prefix must be at least one character long.";
+			}
+			guildprefixes[message.guild.id] = inputs.prefix;
+			fs.writeFile("guildprefixes.json", JSON.stringify(guildprefixes, null, 4), err => { if (err) { log(err); } });
+			return "The prefix of this server has been changed to `" + inputs.prefix + "`.";
+		})
+	)
 	new CommandArgument("literal", "ping", () => "pong (" + client.ping + "ms)")
 ]);
 
