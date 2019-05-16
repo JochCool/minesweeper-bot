@@ -75,7 +75,14 @@ client.on('guildCreate', guild => {
 /** ───── MESSAGE PARSER ───── **/
 // This section is to evaluate you commands and reply to your messages
 
-const prefix = '!';
+const defaultprefix = '!';
+
+function getPrefixForGuild(guildID) {
+	if (typeof guildprefixes[guildID] == "string") {
+		return guildprefixes[guildID];
+	}
+	return defaultprefix;
+};
 
 client.on('message', message => {
 	
@@ -84,6 +91,7 @@ client.on('message', message => {
 	}
 	
 	// Commands
+	let prefix = getPrefixForGuild(message.guild.id);
 	if (message.content.startsWith(prefix) && message.guild.me.hasPermission("SEND_MESSAGES")) {
 		executeCommand(message, message.content.substring(prefix.length));
 	}
@@ -391,11 +399,11 @@ CommandArgument.prototype.getAllChildSyntaxes = function() {
 };
 
 // Contains info about all the commands
-const commands = new CommandArgument("root", prefix, null, [
+const commands = new CommandArgument("root", defaultprefix, null, [
 	new CommandArgument("literal", "help", message => {
 		let returnTxt = "";
 		for (var i = 0; i < commands.child.length; i++) {
-			returnTxt += "\n• `" + prefix + commands.child[i].name + " " + commands.child[i].getChildSyntax(true) + "`";
+			returnTxt += "\n• `" + getPrefixForGuild(message.guild.id) + commands.child[i].name + " " + commands.child[i].getChildSyntax(true) + "`";
 		}
 		if (returnTxt == "") {
 			return "You cannot execute any commands!";
