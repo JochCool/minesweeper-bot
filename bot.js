@@ -448,7 +448,7 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 			fs.writeFile("guildprefixes.json", JSON.stringify(guildprefixes, null, 4), err => { if (err) { log(err); } });
 			return "The prefix of this server has been changed from `" + prevprefix + "` to `" + inputs.prefix + "`.";
 		})
-	)
+	),
 	new CommandArgument("literal", "ping", () => "pong (" + client.ping + "ms)")
 ]);
 
