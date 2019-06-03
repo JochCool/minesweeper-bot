@@ -77,22 +77,33 @@ client.on('guildCreate', guild => {
 
 const defaultprefix = '!';
 
-function getPrefixForGuild(guildID) {
-	if (typeof guildprefixes[guildID] == "string") {
-		return guildprefixes[guildID];
+// Returns the prefix in this guild (if DM, returns default prefix)
+function getCommandsPrefix(guildOrMessage) {
+	let id = guildOrMessage.id;
+	if (guildOrMessage instanceof Discord.Message) {
+		if (guildOrMessage.guild) {
+			id = guildOrMessage.guild.id;
+		}
+		else {
+			return defaultprefix;
+		}
+	}
+	if (typeof guildprefixes[id] == "string") {
+		return guildprefixes[id];
 	}
 	return defaultprefix;
 };
 
 client.on('message', message => {
 	
-	if (!message.guild.available || message.author.bot) {
+	// Don't parse if
+	if (message.guild && !message.guild.available || message.author.bot) {
 		return;
 	}
 	
 	// Commands
-	let prefix = getPrefixForGuild(message.guild.id);
-	if (message.content.startsWith(prefix) && message.guild.me.hasPermission("SEND_MESSAGES")) {
+	let prefix = getCommandsPrefix(message);
+	if (message.content.startsWith(prefix) && (!message.guild || message.guild.me.hasPermission("SEND_MESSAGES"))) {
 		executeCommand(message, message.content.substring(prefix.length));
 	}
 });
@@ -403,7 +414,7 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 	new CommandArgument("literal", "help", message => {
 		let returnTxt = "";
 		for (var i = 0; i < commands.child.length; i++) {
-			returnTxt += "\n• `" + getPrefixForGuild(message.guild.id) + commands.child[i].name + " " + commands.child[i].getChildSyntax(true) + "`";
+			returnTxt += "\n• `" + getCommandsPrefix(message) + commands.child[i].name + " " + commands.child[i].getChildSyntax(true) + "`";
 		}
 		if (returnTxt == "") {
 			return "You cannot execute any commands!";
@@ -437,13 +448,16 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 	}),
 	new CommandArgument("literal", "setprefix", null, 
 		new CommandArgument("text", "prefix", (message, inputs) => {
+			if (!message.guild) {
+				return "The prefix can only be changed in a server, not here.";
+			}
 			if (!message.member.hasPermission("MANAGE_GUILD")) {
 				return "You need the Manage Server permission to change the prefix.";
 			}
 			if (inputs.prefix.length == 0) {
 				return "The prefix must be at least one character long.";
 			}
-			let prevprefix = getPrefixForGuild(message.guild.id);
+			let prevprefix = getCommandsPrefix(message.guild);
 			guildprefixes[message.guild.id] = inputs.prefix;
 			fs.writeFile("guildprefixes.json", JSON.stringify(guildprefixes, null, 4), err => { if (err) { log(err); } });
 			return "The prefix of this server has been changed from `" + prevprefix + "` to `" + inputs.prefix + "`.";
