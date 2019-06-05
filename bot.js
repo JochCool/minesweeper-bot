@@ -56,7 +56,7 @@ client.setTimeout(logCommandsThisHour, getTimeUntilNextHour());
 
 client.on('ready', () => {
 	log("Ready!");
-	client.user.setActivity("Minesweeper", {"type": "PLAYING"}).catch(log);
+	client.user.setActivity("!minesweeper", {"type": "PLAYING"}).catch(log);
 });
 
 client.on('disconnected', function() {
