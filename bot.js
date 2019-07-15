@@ -1,6 +1,6 @@
-const botVersion = "1.5.2";
+const botVersion = "1.6";
 
-// Most of this code is copied from my other project, Entrapment Bot, which is a private bot I use on my own Discord server:
+// A portion of this code is copied from my other project, Entrapment Bot, which is a private bot I use on my own Discord server:
 // https://github.com/JochCool/entrapment-bot
 
 // Replacement of console.log
@@ -19,9 +19,11 @@ log("Starting Minesweeper Bot version " + botVersion);
 // Load everything
 const Discord = require('discord.js');
 const DBLAPI = require('dblapi.js');
+const fs = require('fs');
 const auth = require('./auth.json');
 const package = require('./package.json');
 const updates = require('./news.json').updates;
+var guildprefixes = require('./guildprefixes.json');
 
 log("All modules loaded");
 if (package.version != botVersion) {
@@ -36,11 +38,25 @@ client.login(auth.bottoken).catch(log);
 const dbl = new DBLAPI(auth.dbltoken, client);
 dbl.on('error', log);
 
+// setup to logging number of commands executed this hour
+var commandsThisHour = 0;
+function logCommandsThisHour() {
+	log("Num executed commands this hour: " + commandsThisHour);
+	commandsThisHour = 0;
+	client.setTimeout(logCommandsThisHour, getTimeUntilNextHour());
+};
+function getTimeUntilNextHour() {
+	let now = new Date();
+	return (59 - now.getMinutes())*60000 + (60 - now.getSeconds())*1000;
+};
+
+client.setTimeout(logCommandsThisHour, getTimeUntilNextHour());
+
 // Misc event handlers
 
 client.on('ready', () => {
 	log("Ready!");
-	client.user.setActivity("Minesweeper", {"type": "PLAYING"}).catch(log);
+	client.user.setActivity("!minesweeper", {"type": "PLAYING"}).catch(log);
 });
 
 client.on('disconnected', function() {
@@ -59,27 +75,36 @@ client.on('guildCreate', guild => {
 /** ───── MESSAGE PARSER ───── **/
 // This section is to evaluate you commands and reply to your messages
 
-const prefix = '!';
+const defaultprefix = '!';
+
+// Returns the prefix in this guild (if DM, returns default prefix)
+function getCommandsPrefix(guildOrMessage) {
+	let id = guildOrMessage.id;
+	if (guildOrMessage instanceof Discord.Message) {
+		if (guildOrMessage.guild) {
+			id = guildOrMessage.guild.id;
+		}
+		else {
+			return defaultprefix;
+		}
+	}
+	if (typeof guildprefixes[id] == "string") {
+		return guildprefixes[id];
+	}
+	return defaultprefix;
+};
 
 client.on('message', message => {
 	
-	if (message.author.bot) {
+	// Don't parse if
+	if (message.guild && !message.guild.available || message.author.bot) {
 		return;
 	}
 	
 	// Commands
-	if (message.content.substring(0, 1) == prefix) {
-		executeCommand(message, message.content.substring(1));
-	}
-	
-	// "Good bot" and "Bad bot" (with an exception for the DBL guild)
-	else if (!message.guild || message.guild.id == 264445053596991498) {
-		if (message.content.toLowerCase().startsWith("good bot")) {
-			message.channel.send("Thank you!").catch(log);
-		}
-		else if (message.content.toLowerCase().startsWith("bad bot")) {
-			message.channel.send(":(").catch(log);
-		}
+	let prefix = getCommandsPrefix(message);
+	if (message.content.startsWith(prefix) && (!message.guild || message.guild.me.hasPermission("SEND_MESSAGES"))) {
+		executeCommand(message, message.content.substring(prefix.length));
 	}
 });
 
@@ -133,6 +158,7 @@ function executeCommand(message, command) {
 			
 			// last input; run the command
 			if (thisInputEnd < 0 || command == "" || !currentArgument.child) {
+				commandsThisHour++;
 				if (!currentArgument.run) {
 					message.channel.send("You're missing one or more required arguments: `" + currentArgument.getChildSyntax(true) + "`.").catch(log);
 					return;
@@ -147,6 +173,7 @@ function executeCommand(message, command) {
 	}
 	catch (err) {
 		log(err);
+		commandsThisHour++;
 		message.channel.send("An unknown error occurred while evaluating your command.").catch(log);
 	}
 };
@@ -383,17 +410,25 @@ CommandArgument.prototype.getAllChildSyntaxes = function() {
 };
 
 // Contains info about all the commands
-const commands = new CommandArgument("root", prefix, null, [
+const commands = new CommandArgument("root", defaultprefix, null, [
 	new CommandArgument("literal", "help", message => {
 		let returnTxt = "";
 		for (var i = 0; i < commands.child.length; i++) {
-			returnTxt += "\n• `" + prefix + commands.child[i].name + " " + commands.child[i].getChildSyntax(true) + "`";
+			returnTxt += "\n• `" + getCommandsPrefix(message) + commands.child[i].name + " " + commands.child[i].getChildSyntax(true) + "`";
 		}
 		if (returnTxt == "") {
 			return "You cannot execute any commands!";
 		}
 		return "You can execute the following commands:" + returnTxt;
 	}),
+	new CommandArgument("literal", "minesweeperraw", (message, inputs) => generateGame(undefined, undefined, undefined, message, true),
+		new CommandArgument("integer", "gameWidth", null, 
+			new CommandArgument("integer", "gameHeight", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message, true),
+				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true))
+			)
+		)
+	),
+	new CommandArgument("literal", "msraw", null),
 	new CommandArgument("literal", "minesweeper", (message, inputs) => generateGame(undefined, undefined, undefined, message),
 		new CommandArgument("integer", "gameWidth", null, 
 			new CommandArgument("integer", "gameHeight", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message),
@@ -411,13 +446,34 @@ const commands = new CommandArgument("root", prefix, null, [
 		}
 		return returnTxt;
 	}),
+	new CommandArgument("literal", "setprefix", null, 
+		new CommandArgument("text", "prefix", (message, inputs) => {
+			if (!message.guild) {
+				return "The prefix can only be changed in a server, not here.";
+			}
+			if (!message.member.hasPermission("MANAGE_GUILD")) {
+				return "You need the Manage Server permission to change the prefix.";
+			}
+			if (inputs.prefix.length == 0) {
+				return "The prefix must be at least one character long.";
+			}
+			let prevprefix = getCommandsPrefix(message.guild);
+			guildprefixes[message.guild.id] = inputs.prefix;
+			fs.writeFile("guildprefixes.json", JSON.stringify(guildprefixes, null, 4), err => { if (err) { log(err); } });
+			return "The prefix of this server has been changed from `" + prevprefix + "` to `" + inputs.prefix + "`.";
+		})
+	),
 	new CommandArgument("literal", "ping", () => "pong (" + client.ping + "ms)")
 ]);
-commands.child[2].child = commands.child[1].child; // cheating here because aliases haven't been implemented yet
+
+// cheating here because aliases haven't been implemented yet
+commands.child[2].child = commands.child[1].child;
 commands.child[2].run = commands.child[1].run;
+commands.child[4].child = commands.child[3].child;
+commands.child[4].run = commands.child[3].run;
 
 // Gets called when you run the `!minesweeper` command
-function generateGame(gameWidth, gameHeight, numMines, message) {
+function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 	
 	// Check game size
 	if (isNaN(gameWidth)) {
@@ -485,6 +541,8 @@ function generateGame(gameWidth, gameHeight, numMines, message) {
 	if (numMines === 1) { returnTxt = "Here's a board sized " + gameWidth + "x" + gameHeight + " with 1 mine:"; }
 	else                { returnTxt = "Here's a board sized " + gameWidth + "x" + gameHeight + " with " + numMines + " mines:"; }
 	
+	if (isRaw) { returnTxt += "\n```"; }
+	
 	for (var y = 0; y < game.length; y++) {
 		returnTxt += "\n"
 		for (var x = 0; x < game[y].length; x++) {
@@ -496,6 +554,8 @@ function generateGame(gameWidth, gameHeight, numMines, message) {
 			}
 		}
 	}
+	
+	if (isRaw) { returnTxt += "\n```"; }
 	
 	// Send the message if it's not longer than 2000 chars (Discord's limit)
 	if (returnTxt.length <= 2000) {

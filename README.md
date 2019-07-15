@@ -14,11 +14,14 @@ When you run this command, I will reply with a grid of spoiler tags. Click a spo
 ## Other Commands
 Here's the other commands I listen to:
 * `!ms` — alias of `!minesweeper`.
+* `!minesweeperraw` — same as `!minesweeper`, but it gives you the raw text/copypasta so you can share the game.
+* `!msraw` — alias of `!minesweeperraw`.
 * `!help` — shows this list of commands.
 * `!info` — displays info about me.
 * `!howtoplay` — displays a tutorial about how to play the game.
 * `!news` — displays info about my latest updates.
-* `!ping` — displays the heartbeat ping of the bot.
+* `!setprefix` — allows you to change the prefix of all my commands. Requires Manage Server permission to execute.
+* `!ping` — displays my heartbeat ping.
 
 ## Other info
 My creator is @JochCool#1314. If you have any questions or other remarks, you can DM him. You can submit bug reports and feature requests on the GitHub page.
