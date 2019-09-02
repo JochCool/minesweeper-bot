@@ -1,4 +1,4 @@
-const botVersion = "1.6";
+const botVersion = "1.7";
 
 // A portion of this code is copied from my other project, Entrapment Bot, which is a private bot I use on my own Discord server:
 // https://github.com/JochCool/entrapment-bot
@@ -472,6 +472,11 @@ commands.child[2].run = commands.child[1].run;
 commands.child[4].child = commands.child[3].child;
 commands.child[4].run = commands.child[3].run;
 
+
+
+// If you add these xy values to some other coordinate, you'll get the eight neighbours of that coordinate.
+const neighbourLocations = [{x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1}, {x: 1, y: 0}, {x: 1, y: 1}, {x: 0, y: 1}, {x: -1, y: 1}, {x: -1, y: 0}];
+
 // Gets called when you run the `!minesweeper` command
 function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 	
@@ -526,11 +531,11 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 		game[y][x] = -1;
 		
 		// Add 1 to neighbouring tiles
-		for (var i = 0; i < neighbourLocations.length; i++) {
-			let newCoord = {x: x + neighbourLocations[i].x, y: y + neighbourLocations[i].y};
-			if (newCoord.x > 0 && newCoord.x < game[newCoord.y].length-1 &&
-			    newCoord.y > 0 && newCoord.y < game.length -1 &&
-			    game[newCoord.x][newCoord.y] !== -1) {
+		for (var j = 0; j < neighbourLocations.length; j++) {
+			let newCoord = {x: x + neighbourLocations[j].x, y: y + neighbourLocations[j].y};
+			if (newCoord.y >= 0 && newCoord.y < game.length &&
+			    newCoord.x >= 0 && newCoord.x < game[newCoord.y].length &&
+			    game[newCoord.y][newCoord.x] !== -1) {
 				game[newCoord.y][newCoord.x]++;
 			}
 		}
@@ -569,15 +574,17 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 		
 		// Uncover neighbouring tiles
 		while (locationsToUncover.length > 0) {
-			for (var i = 0; i < neighbourLocations.length; i++) {
-				let newCoord = {x: locationsToUncover[0].x + neighbourLocations[i].x, y: locationsToUncover[0].y + neighbourLocations[i].y};
-				if (uncoveredLocations[newCoord.y][newCoord.x] === true) { continue; }
+			for (var j = 0; j < neighbourLocations.length; j++) {
+				let newCoord = {x: locationsToUncover[0].x + neighbourLocations[j].x, y: locationsToUncover[0].y + neighbourLocations[j].y};
+				if (newCoord.y < 0 || newCoord.y >= game.length ||
+				    newCoord.x < 0 || newCoord.x >= game[newCoord.y].length ||
+				    uncoveredLocations[newCoord.y][newCoord.x] === true) { continue; }
 				uncoveredLocations[newCoord.y][newCoord.x] = true;
 				if (game[newCoord.y][newCoord.x] === 0) {
 					locationsToUncover.push(newCoord);
 				}
-				locationsToUncover.shift();
 			}
+			locationsToUncover.shift();
 		}
 	}
 	
@@ -593,6 +600,9 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 		for (var x = 0; x < game[y].length; x++) {
 			if (game[y][x] === -1) {
 				returnTxt += "||:bomb:||";
+			}
+			else if (uncoveredLocations[y][x]) {
+				returnTxt += numberEmoji[game[y][x]];
 			}
 			else {
 				returnTxt += "||" + numberEmoji[game[y][x]] + "||";
@@ -630,6 +640,3 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 };
 
 const numberEmoji = [":zero:", ":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":nine:"];
-
-// If you add these xy values to some other coordinate, you'll get the eight neighbours of that coordinate.
-const neighbourLocations = [{x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1}, {x: 1, y: 0}, {x: 1, y: 1}, {x: 0, y: 1}, {x: -1, y: 1}, {x: -1, y: 0}];
