@@ -1,4 +1,4 @@
-const botVersion = "1.6";
+const botVersion = "1.7";
 
 // A portion of this code is copied from my other project, Entrapment Bot, which is a private bot I use on my own Discord server:
 // https://github.com/JochCool/entrapment-bot
@@ -472,6 +472,11 @@ commands.child[2].run = commands.child[1].run;
 commands.child[4].child = commands.child[3].child;
 commands.child[4].run = commands.child[3].run;
 
+
+
+// If you add these xy values to some other coordinate, you'll get the eight neighbours of that coordinate.
+const neighbourLocations = [{x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1}, {x: 1, y: 0}, {x: 1, y: 1}, {x: 0, y: 1}, {x: -1, y: 1}, {x: -1, y: 0}];
+
 // Gets called when you run the `!minesweeper` command
 function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 	
@@ -526,6 +531,16 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 		game[y][x] = -1;
 		
 		// Add 1 to neighbouring tiles
+		for (var j = 0; j < neighbourLocations.length; j++) {
+			let newCoord = {x: x + neighbourLocations[j].x, y: y + neighbourLocations[j].y};
+			if (newCoord.y >= 0 && newCoord.y < game.length &&
+			    newCoord.x >= 0 && newCoord.x < game[newCoord.y].length &&
+			    game[newCoord.y][newCoord.x] !== -1) {
+				game[newCoord.y][newCoord.x]++;
+			}
+		}
+		
+		/* Old code:
 		if (x > 0                && y > 0             && game[y-1][x-1] !== -1) { game[y-1][x-1]++; }
 		if (                        y > 0             && game[y-1][x  ] !== -1) { game[y-1][x  ]++; }
 		if (x < game[y].length-1 && y > 0             && game[y-1][x+1] !== -1) { game[y-1][x+1]++; }
@@ -534,6 +549,43 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 		if (                        y < game.length-1 && game[y+1][x  ] !== -1) { game[y+1][x  ]++; }
 		if (x > 0                && y < game.length-1 && game[y+1][x-1] !== -1) { game[y+1][x-1]++; }
 		if (x > 0                                     && game[y  ][x-1] !== -1) { game[y  ][x-1]++; }
+		//*/
+	}
+	
+	// Find all the zeroes in this game (for uncovering)
+	let zeroLocations = [];
+	for (var y = 0; y < game.length; y++) {
+		for (var x = 0; x < game[y].length; x++) {
+			if (game[y][x] === 0) {
+				zeroLocations.push({x: x, y: y});
+			}
+		}
+	}
+	
+	// Uncover a random region
+	let uncoveredLocations = []; // 2D array, each value is either nothing (not uncovered) or true (uncovered)
+	for (var y = 0; y < game.length; y++) {
+		uncoveredLocations.push([]);
+	}
+	if (zeroLocations.length > 0) {
+		// Select random starting point
+		let locationsToUncover = [];
+		locationsToUncover.push(zeroLocations[Math.floor(Math.random()*zeroLocations.length)]);
+		
+		// Uncover neighbouring tiles
+		while (locationsToUncover.length > 0) {
+			for (var j = 0; j < neighbourLocations.length; j++) {
+				let newCoord = {x: locationsToUncover[0].x + neighbourLocations[j].x, y: locationsToUncover[0].y + neighbourLocations[j].y};
+				if (newCoord.y < 0 || newCoord.y >= game.length ||
+				    newCoord.x < 0 || newCoord.x >= game[newCoord.y].length ||
+				    uncoveredLocations[newCoord.y][newCoord.x] === true) { continue; }
+				uncoveredLocations[newCoord.y][newCoord.x] = true;
+				if (game[newCoord.y][newCoord.x] === 0) {
+					locationsToUncover.push(newCoord);
+				}
+			}
+			locationsToUncover.shift();
+		}
 	}
 	
 	// Create the reply
@@ -548,6 +600,9 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 		for (var x = 0; x < game[y].length; x++) {
 			if (game[y][x] === -1) {
 				returnTxt += "||:bomb:||";
+			}
+			else if (uncoveredLocations[y][x]) {
+				returnTxt += numberEmoji[game[y][x]];
 			}
 			else {
 				returnTxt += "||" + numberEmoji[game[y][x]] + "||";
