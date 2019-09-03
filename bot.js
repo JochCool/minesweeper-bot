@@ -570,7 +570,7 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 	if (zeroLocations.length > 0) {
 		// Select random starting point
 		let locationsToUncover = [];
-		locationsToUncover.push(zeroLocations[Math.floor(Math.random(zeroLocations.length))]);
+		locationsToUncover.push(zeroLocations[Math.floor(Math.random()*zeroLocations.length)]);
 		
 		// Uncover neighbouring tiles
 		while (locationsToUncover.length > 0) {
