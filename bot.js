@@ -1,4 +1,4 @@
-const botVersion = "1.7";
+const botVersion = "1.8";
 
 // What you're probably looking for is the generateGame function, which is all the way at the bottom of the code (currently line 487).
 
@@ -20,7 +20,6 @@ log("Starting Minesweeper Bot version " + botVersion);
 
 // Load everything
 const Discord = require('discord.js');
-const DBLAPI = require('dblapi.js');
 const fs = require('fs');
 const auth = require('./auth.json');
 const package = require('./package.json');
@@ -32,13 +31,24 @@ if (package.version != botVersion) {
 	log("Inconsistency between package version (" + package.version + ") and code version (" + botVersion + ")");
 }
 
+// Censored bot token?
+if (!auth.bottoken || auth.bottoken == "CENSORED") {
+	log("Please fill in the token of your Discord Bot (can be found at https://discordapp.com/developers/applications).");
+	process.exit();
+}
+
 // Initialise Discord Bot
 const client = new Discord.Client();
 client.login(auth.bottoken).catch(log);
 
 // Initalise connetion with DBLAPI (discordbots.org)
-const dbl = new DBLAPI(auth.dbltoken, client);
-dbl.on('error', log);
+if (auth.dbltoken && auth.dbltoken != "CENSORED") {
+	const DBLAPI = require('dblapi.js');
+	new DBLAPI(auth.dbltoken, client).on('error', log);
+}
+else {
+	log("Starting bot without DBLAPI token.");
+}
 
 // setup to logging number of commands executed this hour
 var commandsThisHour = 0;
@@ -427,7 +437,7 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 		new CommandArgument("integer", "gameWidth", null, 
 			new CommandArgument("integer", "gameHeight", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message, true),
 				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true),
-					new CommandArgument("literal", "dontStartUncovered" (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true, true))
+					new CommandArgument("literal", "dontStartUncovered", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true, true))
 				)
 			)
 		)
@@ -437,7 +447,7 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 		new CommandArgument("integer", "gameWidth", null, 
 			new CommandArgument("integer", "gameHeight", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message),
 				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message),
-					new CommandArgument("literal", "dontStartUncovered" (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, false, true))
+					new CommandArgument("literal", "dontStartUncovered", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, false, true))
 				)
 			)
 		)
