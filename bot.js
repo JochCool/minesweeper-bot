@@ -1,5 +1,7 @@
 const botVersion = "1.7";
 
+// What you're probably looking for is the generateGame function, which is all the way at the bottom of the code (currently line 487).
+
 // A portion of this code is copied from my other project, Entrapment Bot, which is a private bot I use on my own Discord server:
 // https://github.com/JochCool/entrapment-bot
 
@@ -424,7 +426,9 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 	new CommandArgument("literal", "minesweeperraw", (message, inputs) => generateGame(undefined, undefined, undefined, message, true),
 		new CommandArgument("integer", "gameWidth", null, 
 			new CommandArgument("integer", "gameHeight", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message, true),
-				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true))
+				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true),
+					new CommandArgument("literal", "dontStartUncovered" (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true, true))
+				)
 			)
 		)
 	),
@@ -432,7 +436,9 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 	new CommandArgument("literal", "minesweeper", (message, inputs) => generateGame(undefined, undefined, undefined, message),
 		new CommandArgument("integer", "gameWidth", null, 
 			new CommandArgument("integer", "gameHeight", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message),
-				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message))
+				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message),
+					new CommandArgument("literal", "dontStartUncovered" (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, false, true))
+				)
 			)
 		)
 	),
@@ -478,7 +484,9 @@ commands.child[4].run = commands.child[3].run;
 const neighbourLocations = [{x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1}, {x: 1, y: 0}, {x: 1, y: 1}, {x: 0, y: 1}, {x: -1, y: 1}, {x: -1, y: 0}];
 
 // Gets called when you run the `!minesweeper` command
-function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
+function generateGame(gameWidth, gameHeight, numMines, message, isRaw, startsNotUncovered) {
+	
+	/** ──────── CHECKS ──────── **/
 	
 	// Check game size
 	if (isNaN(gameWidth)) {
@@ -507,9 +515,12 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 		}
 	}
 	
-	// Generate game (2D array sorted [y][x], -1 means a mine, positive number is the amount of neighbouring mines)
+	/** ──────── CREATE GAME ──────── **/
+	
+	// 2D array that contains the game, sorted [y][x]. -1 means a mine, positive number is the amount of neighbouring mines
 	var game = [];
 	
+	// Initialise the game array with zeroes
 	for (var y = 0; y < gameHeight; y++) {
 		game.push([]);
 		for (var x = 0; x < gameWidth; x++) {
@@ -540,7 +551,7 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 			}
 		}
 		
-		/* Old code:
+		/* Old code (easier to understand):
 		if (x > 0                && y > 0             && game[y-1][x-1] !== -1) { game[y-1][x-1]++; }
 		if (                        y > 0             && game[y-1][x  ] !== -1) { game[y-1][x  ]++; }
 		if (x < game[y].length-1 && y > 0             && game[y-1][x+1] !== -1) { game[y-1][x+1]++; }
@@ -552,43 +563,50 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 		//*/
 	}
 	
-	// Find all the zeroes in this game (for uncovering)
-	let zeroLocations = [];
-	for (var y = 0; y < game.length; y++) {
-		for (var x = 0; x < game[y].length; x++) {
-			if (game[y][x] === 0) {
-				zeroLocations.push({x: x, y: y});
-			}
-		}
-	}
+	/** ──────── UNCOVERING ──────── **/
 	
-	// Uncover a random region
+	// Initialise vars
+	let zeroLocations = []; // Array of {x,y} objects, will contain locations of all zeroes in the game
 	let uncoveredLocations = []; // 2D array, each value is either nothing (not uncovered) or true (uncovered)
 	for (var y = 0; y < game.length; y++) {
 		uncoveredLocations.push([]);
 	}
-	if (zeroLocations.length > 0) {
-		// Select random starting point
-		let locationsToUncover = [];
-		locationsToUncover.push(zeroLocations[Math.floor(Math.random()*zeroLocations.length)]);
-		
-		// Uncover neighbouring tiles
-		while (locationsToUncover.length > 0) {
-			for (var j = 0; j < neighbourLocations.length; j++) {
-				let newCoord = {x: locationsToUncover[0].x + neighbourLocations[j].x, y: locationsToUncover[0].y + neighbourLocations[j].y};
-				if (newCoord.y < 0 || newCoord.y >= game.length ||
-				    newCoord.x < 0 || newCoord.x >= game[newCoord.y].length ||
-				    uncoveredLocations[newCoord.y][newCoord.x] === true) { continue; }
-				uncoveredLocations[newCoord.y][newCoord.x] = true;
-				if (game[newCoord.y][newCoord.x] === 0) {
-					locationsToUncover.push(newCoord);
+	
+	if (!startsNotUncovered) {
+		// Find all the zeroes in this game
+		for (var y = 0; y < game.length; y++) {
+			for (var x = 0; x < game[y].length; x++) {
+				if (game[y][x] === 0) {
+					zeroLocations.push({x: x, y: y});
 				}
 			}
-			locationsToUncover.shift();
+		}
+
+		// Uncover a random region
+		if (zeroLocations.length > 0) {
+			// Select random starting point
+			let locationsToUncover = [];
+			locationsToUncover.push(zeroLocations[Math.floor(Math.random()*zeroLocations.length)]);
+
+			// Uncover neighbouring tiles
+			while (locationsToUncover.length > 0) {
+				for (var j = 0; j < neighbourLocations.length; j++) {
+					let newCoord = {x: locationsToUncover[0].x + neighbourLocations[j].x, y: locationsToUncover[0].y + neighbourLocations[j].y};
+					if (newCoord.y < 0 || newCoord.y >= game.length ||
+					    newCoord.x < 0 || newCoord.x >= game[newCoord.y].length ||
+					    uncoveredLocations[newCoord.y][newCoord.x] === true) { continue; }
+					uncoveredLocations[newCoord.y][newCoord.x] = true;
+					if (game[newCoord.y][newCoord.x] === 0) {
+						locationsToUncover.push(newCoord);
+					}
+				}
+				locationsToUncover.shift();
+			}
 		}
 	}
 	
-	// Create the reply
+	/** ──────── CREATE REPLY ──────── **/
+	
 	let returnTxt;
 	if (numMines === 1) { returnTxt = "Here's a board sized " + gameWidth + "x" + gameHeight + " with 1 mine:"; }
 	else                { returnTxt = "Here's a board sized " + gameWidth + "x" + gameHeight + " with " + numMines + " mines:"; }
@@ -601,7 +619,7 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 			if (game[y][x] === -1) {
 				returnTxt += "||:bomb:||";
 			}
-			else if (uncoveredLocations[y][x]) {
+			else if (!startsNotUncovered && uncoveredLocations[y][x]) {
 				returnTxt += numberEmoji[game[y][x]];
 			}
 			else {
