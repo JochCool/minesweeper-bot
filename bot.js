@@ -676,10 +676,16 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw, startsNot
 		let splitIndex = returnTxt.substring(0, 1900).lastIndexOf("\n");
 		if (splitIndex === -1) {
 			log("A too large message was generated after creating a game.");
-			return "Sorry, your message appears to be too large to send. Please try a smaller game next time.";
+			return "Sorry, your message appears to be too large to send (because of Discord's character limit). Please try a smaller game next time.";
 		}
 		splitReturns.push(returnTxt.substring(0, splitIndex));
 		returnTxt = returnTxt.substring(splitIndex+1);
+		
+		// Also split the triple backticks
+		if (isRaw) {
+			splitReturns[splitReturns.length-1] += "\n```";
+			returnTxt = "```\n" + returnTxt;
+		}
 	} while (returnTxt.length > 1900)
 	
 	splitReturns.push(returnTxt);
