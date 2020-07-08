@@ -1,34 +1,38 @@
 const botVersion = "1.8";
 
-// What you're probably looking for is the generateGame function, which is all the way at the bottom of the code (currently line 487).
-
-// A portion of this code is copied from my other project, Entrapment Bot, which is a private bot I use on my own Discord server:
-// https://github.com/JochCool/entrapment-bot
+// What you're probably looking for is the generateGame function, which is all the way at the bottom of the code (currently line 512).
 
 // Replacement of console.log
 function log(message) {
 	if (message instanceof Error) {
 		message = message.stack;
 	}
-	console.log("[" + new Date().toLocaleTimeString() + "] " + message);
+	var now = new Date();
+	console.log(`[Minesweeper Bot] [${now.getUTCFullYear()}-${toTwoDigitString(now.getUTCMonth()+1)}-${toTwoDigitString(now.getUTCDate())} &{toTwoDigitString(now.getUTCHours())}:${toTwoDigitString(now.getUTCMinutes())}:${toTwoDigitString(now.getUTCSeconds())}] ${message}`);
+};
+function toTwoDigitString(num) {
+	var str = num.toString();
+	if (str.length == 1) return "0" + str;
+	return str;
 };
 
-log("Starting Minesweeper Bot version " + botVersion);
+log(`Starting Minesweeper Bot version ${botVersion}`);
 
 /** ───── BECOME A DISCORD BOT ───── **/
 // This section is to load the modules, initialise the bot and create some general functions
 
 // Load everything
-const Discord = require('discord.js');
-const fs = require('fs');
-const auth = require('./auth.json');
-const package = require('./package.json');
-const updates = require('./news.json').updates;
-var guildprefixes = require('./guildprefixes.json');
+const Discord = require("discord.js");
+const fs = require("fs");
+const path = require("path");
+const auth = require("./auth.json");
+const package = require("./package.json");
+const updates = require("./news.json").updates;
+var guildprefixes = require("./guildprefixes.json");
 
 log("All modules loaded");
 if (package.version != botVersion) {
-	log("Inconsistency between package version (" + package.version + ") and code version (" + botVersion + ")");
+	log(`Inconsistency between package version (${package.version}) and code version (${botVersion})`);
 }
 
 // Censored bot token?
@@ -41,47 +45,74 @@ if (!auth.bottoken || auth.bottoken == "CENSORED") {
 const client = new Discord.Client();
 client.login(auth.bottoken).catch(log);
 
-// Initalise connetion with DBLAPI (discordbots.org)
+// Initalise connetion with DBLAPI (the API for top.gg / discordbots.org)
 if (auth.dbltoken && auth.dbltoken != "CENSORED") {
-	const DBLAPI = require('dblapi.js');
-	new DBLAPI(auth.dbltoken, client).on('error', log);
+	const DBLAPI = require("dblapi.js");
+	new DBLAPI(auth.dbltoken, client).on("error", log);
 }
 else {
 	log("Starting bot without DBLAPI token.");
 }
 
-// setup to logging number of commands executed this hour
+function getGuildCount() {
+	return client.guilds.array().length;
+});
+
+// setup for hourly reports in the log
 var commandsThisHour = 0;
-function logCommandsThisHour() {
-	log("Num executed commands this hour: " + commandsThisHour);
+var reconnectsThisHour = 0;
+function report() {
+	log(`Hourly report: ${commandsThisHour} commands, ${reconnectsThisHour} reconnects.`);
 	commandsThisHour = 0;
-	client.setTimeout(logCommandsThisHour, getTimeUntilNextHour());
+	reconnectsThisHour = 0;
+	client.setTimeout(report, getTimeUntilNextHour());
 };
+// This function appears to work but time is weird and hard to test so if there is an oversight please tell me
 function getTimeUntilNextHour() {
 	let now = new Date();
 	return (59 - now.getMinutes())*60000 + (60 - now.getSeconds())*1000;
 };
 
-client.setTimeout(logCommandsThisHour, getTimeUntilNextHour());
+client.setTimeout(report, getTimeUntilNextHour());
 
 // Misc event handlers
 
-client.on('ready', () => {
-	log("Ready!");
+client.on("ready", () => {
+	log(`Ready! Current guild count: ${getGuildCount()}`);
 	client.user.setActivity("!minesweeper", {"type": "PLAYING"}).catch(log);
 });
 
-client.on('disconnected', function() {
-	log("Disconnected from the server. Stopping!");
-	process.exit();
+client.on("disconnected", event => {
+	log("WebSocket disconnected! CloseEvent:");
+	console.log(event);
 });
 
-client.on('error', function() {
+client.on("error", () => {
 	log("WebSocket error");
 });
 
-client.on('guildCreate', guild => {
-	log("Joined a new guild! It's called \"" + guild.name + "\" (Current count: " + client.guilds.array().length + ")");
+client.on("reconnecting", () => {
+	//log("Reconnecting...");
+	reconnectsThisHour++;
+});
+
+/*
+client.on("resume", replayed => {
+	log(`Resumed! Replayed ${replayed} events.`);
+});
+//*/
+
+client.on("ratelimit", info => {
+	log("Being ratelimited! Info:");
+	console.log(info);
+});
+
+client.on("guildCreate", guild => {
+	log(`Joined a new guild! It's called "${guild.name}" (Current count: ${getGuildCount()})`);
+});
+
+client.on("guildDelete", guild => {
+	log(`Left a guild :(. It was called "${guild.name}" (Current count: ${getGuildCount()})`);
 });
 
 /** ───── MESSAGE PARSER ───── **/
@@ -97,9 +128,12 @@ function getCommandsPrefix(guildOrMessage) {
 			id = guildOrMessage.guild.id;
 		}
 		else {
+			// Default prefix for DM channels
 			return defaultprefix;
 		}
 	}
+	
+	// Has it been stored?
 	if (typeof guildprefixes[id] == "string") {
 		return guildprefixes[id];
 	}
@@ -115,7 +149,7 @@ client.on('message', message => {
 	
 	// Commands
 	let prefix = getCommandsPrefix(message);
-	if (message.content.startsWith(prefix) && (!message.guild || message.guild.me.hasPermission("SEND_MESSAGES"))) {
+	if (message.content.startsWith(prefix) && (!message.guild || message.channel.memberPermissions(message.guild.me).has("SEND_MESSAGES"))) {
 		executeCommand(message, message.content.substring(prefix.length));
 	}
 });
@@ -155,7 +189,7 @@ function executeCommand(message, command) {
 			
 			if (!inputAllowed) {
 				if (currentArgument != commands.child) {
-					message.channel.send("Invalid argument: `" + input + "`. Expected `" + syntax + "`.").catch(log);
+					message.channel.send(`Invalid argument: \`${input}\`. Expected \`${syntax}\`.`).catch(log);
 				}
 				return;
 			}
@@ -172,7 +206,7 @@ function executeCommand(message, command) {
 			if (thisInputEnd < 0 || command == "" || !currentArgument.child) {
 				commandsThisHour++;
 				if (!currentArgument.run) {
-					message.channel.send("You're missing one or more required arguments: `" + currentArgument.getChildSyntax(true) + "`.").catch(log);
+					message.channel.send(`You're missing one or more required arguments: \`${currentArgument.getChildSyntax(true)}\`.`).catch(log);
 					return;
 				}
 				let commandResult = currentArgument.run(message, inputs);
@@ -206,7 +240,6 @@ There are various types of arguments:
 - "text" (you can fill in whatever text you want)
 - "number" (you have to fill in a valid number)
 - "integer" (you have to fill in a valid integer)
-- "date" (you have to fill in a valid Date, preferrably using ISO 8601 format)
 - "root" (not an argument, this is the first node in the tree)
 
 Some arguments have a run function. This function gets executed if this argument was the last one to be specified in the command.
@@ -300,24 +333,6 @@ CommandArgument.prototype.isInputAllowed = function(command) {
 		}
 		return true;
 	}
-	if (this.type == "date") {
-		let date;
-		if (input.startsWith('T')) {
-			let now = new Date();
-			
-			date = Date.parse(now.getFullYear() + "-" + (now.getMonth()+1).getStringWithPrecedingZeroes(2) + "-" + now.getDate().getStringWithPrecedingZeroes(2) + input);
-			//log(now.getFullYear() + "-" + now.getMonth() + "-" + now.getDate() + input);
-		}
-		else {
-			date = Date.parse(input);
-		}
-		log("parsed date: "+date);
-		if (isNaN(date)) {
-			return false;
-		}
-		input = date;
-		return true;
-	}
 	
 	return this.type == "text";
 };
@@ -341,7 +356,7 @@ CommandArgument.prototype.getChildSyntax = function(withChildren) {
 				syntax += this.child[i].name;
 			}
 			else {
-				syntax += "<" + this.child[i].name + ">";
+				syntax += `<${this.child[i].name}>`;
 			}
 			if (this.child[i].child) {
 				childrenHaveChildren = true;
@@ -356,7 +371,7 @@ CommandArgument.prototype.getChildSyntax = function(withChildren) {
 			syntax += this.child.name;
 		}
 		else {
-			syntax += "<" + this.child.name + ">";
+			syntax += `<${this.child.name}>`;
 		}
 	}
 	
@@ -374,7 +389,7 @@ CommandArgument.prototype.getChildSyntax = function(withChildren) {
 	
 	// Children are optional
 	if (this.run) {
-		syntax = "[" + syntax + "]";
+		syntax = `[${syntax}]`;
 	}
 	
 	return syntax;
@@ -393,13 +408,13 @@ CommandArgument.prototype.getAllChildSyntaxes = function() {
 			let thesesyntaxes = this.child[i].getAllChildSyntaxes();
 			let childName = this.child[i].name;
 			if (this.child[i].type != "literal") {
-				childName = "<" + childName + ">";
+				childName = `<${childName}>`;
 			}
 			if (this.run) {
-				childName = "[" + childName + "]";
+				childName = `[${childName}]`;
 			}
 			for (var s = 0; s < thesesyntaxes.length; s++) {
-				syntaxes.push(childName + " " + thesesyntaxes[s]);
+				syntaxes.push(`${childName} ${thesesyntaxes[s]}`);
 			}
 		}
 	}
@@ -409,13 +424,13 @@ CommandArgument.prototype.getAllChildSyntaxes = function() {
 		syntaxes = this.child.getAllChildSyntaxes();
 		let childName = this.child.name;
 		if (this.child.type != "literal") {
-			childName = "<" + childName + ">";
+			childName = `<${childName}>`;
 		}
 		if (this.run) {
-			childName = "[" + childName + "]";
+			childName = `[${childName}]`;
 		}
 		for (var s = 0; s < syntaxes.length; s++) {
-			syntaxes[s] = childName + " " + syntaxes[s];
+			syntaxes[s] = `${childName} ${syntaxes[s]}`;
 		}
 	}
 	return syntaxes;
@@ -426,12 +441,12 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 	new CommandArgument("literal", "help", message => {
 		let returnTxt = "";
 		for (var i = 0; i < commands.child.length; i++) {
-			returnTxt += "\n• `" + getCommandsPrefix(message) + commands.child[i].name + " " + commands.child[i].getChildSyntax(true) + "`";
+			returnTxt += `\n• \`${getCommandsPrefix(message)}${commands.child[i].name} ${commands.child[i].getChildSyntax(true)}\``;
 		}
 		if (returnTxt == "") {
 			return "You cannot execute any commands!";
 		}
-		return "You can execute the following commands:" + returnTxt;
+		return `You can execute the following commands: ${returnTxt}`;
 	}),
 	new CommandArgument("literal", "minesweeperraw", (message, inputs) => generateGame(undefined, undefined, undefined, message, true),
 		new CommandArgument("integer", "gameWidth", null, 
@@ -458,7 +473,7 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 	new CommandArgument("literal", "news", () => {
 		let returnTxt = "These were my past three updates:\n";
 		for (var i = 0; i < 3 && i < updates.length; i++) {
-			returnTxt += "\nVersion " + updates[i].name + " — " + updates[i].description;
+			returnTxt += `\nVersion ${updates[i].name} — ${updates[i].description}`;
 		}
 		return returnTxt;
 	}),
@@ -475,11 +490,11 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 			}
 			let prevprefix = getCommandsPrefix(message.guild);
 			guildprefixes[message.guild.id] = inputs.prefix;
-			fs.writeFile("guildprefixes.json", JSON.stringify(guildprefixes, null, 4), err => { if (err) { log(err); } });
-			return "The prefix of this server has been changed from `" + prevprefix + "` to `" + inputs.prefix + "`.";
+			fs.writeFile(path.resolve(__dirname, "guildprefixes.json"), JSON.stringify(guildprefixes, null, 4), err => { if (err) { log(err); } });
+			return `The prefix of this server has been changed from \`${prevprefix}\` to \`${inputs.prefix}\`.`;
 		})
 	),
-	new CommandArgument("literal", "ping", () => "pong (" + client.ping + "ms)")
+	new CommandArgument("literal", "ping", () => `pong (${client.ping}ms)`)
 ]);
 
 // cheating here because aliases haven't been implemented yet
@@ -503,7 +518,7 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw, startsNot
 		gameWidth = 8;
 	}
 	else if (gameWidth <= 0 || gameHeight <= 0) {
-		return "Uh, I'm not smart enough to generate a maze of that size. I can only use positive numbers. Sorry :cry:";
+		return "Uh, I'm not smart enough to generate a maze of a negative size. I can only use positive numbers. Sorry :cry:";
 	}
 	if (isNaN(gameHeight)) {
 		gameHeight = 8;
@@ -618,8 +633,8 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw, startsNot
 	/** ──────── CREATE REPLY ──────── **/
 	
 	let returnTxt;
-	if (numMines === 1) { returnTxt = "Here's a board sized " + gameWidth + "x" + gameHeight + " with 1 mine:"; }
-	else                { returnTxt = "Here's a board sized " + gameWidth + "x" + gameHeight + " with " + numMines + " mines:"; }
+	if (numMines === 1) returnTxt = `Here's a board sized ${gameWidth}x${gameHeight} with 1 mine:`;
+	else                returnTxt = `Here's a board sized ${gameWidth}x${gameHeight} with ${numMines} mines:`; }
 	
 	if (isRaw) { returnTxt += "\n```"; }
 	
@@ -633,7 +648,7 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw, startsNot
 				returnTxt += numberEmoji[game[y][x]];
 			}
 			else {
-				returnTxt += "||" + numberEmoji[game[y][x]] + "||";
+				returnTxt += `||${numberEmoji[game[y][x]]}||`;
 			}
 		}
 	}
