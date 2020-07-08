@@ -8,7 +8,7 @@ function log(message) {
 		message = message.stack;
 	}
 	var now = new Date();
-	console.log(`[Minesweeper Bot] [${now.getUTCFullYear()}-${toTwoDigitString(now.getUTCMonth()+1)}-${toTwoDigitString(now.getUTCDate())} &{toTwoDigitString(now.getUTCHours())}:${toTwoDigitString(now.getUTCMinutes())}:${toTwoDigitString(now.getUTCSeconds())}] ${message}`);
+	console.log(`[Minesweeper Bot] [${now.getUTCFullYear()}-${toTwoDigitString(now.getUTCMonth()+1)}-${toTwoDigitString(now.getUTCDate())} ${toTwoDigitString(now.getUTCHours())}:${toTwoDigitString(now.getUTCMinutes())}:${toTwoDigitString(now.getUTCSeconds())}] ${message}`);
 };
 function toTwoDigitString(num) {
 	var str = num.toString();
@@ -55,8 +55,8 @@ else {
 }
 
 function getGuildCount() {
-	return client.guilds.array().length;
-});
+	return client.guilds.cache.array().length;
+};
 
 // setup for hourly reports in the log
 var commandsThisHour = 0;
@@ -87,10 +87,6 @@ client.on("disconnected", event => {
 	console.log(event);
 });
 
-client.on("error", () => {
-	log("WebSocket error");
-});
-
 client.on("reconnecting", () => {
 	//log("Reconnecting...");
 	reconnectsThisHour++;
@@ -106,6 +102,20 @@ client.on("ratelimit", info => {
 	log("Being ratelimited! Info:");
 	console.log(info);
 });
+
+client.on("error", () => {
+	log("WebSocket error");
+});
+
+client.on("warn", warning => {
+	log(`Emitted warning: ${warning}`);
+});
+
+/*
+client.on("debug", info => {
+	log(`Emitted debug: ${info});
+]);
+//*/
 
 client.on("guildCreate", guild => {
 	log(`Joined a new guild! It's called "${guild.name}" (Current count: ${getGuildCount()})`);
@@ -494,7 +504,7 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 			return `The prefix of this server has been changed from \`${prevprefix}\` to \`${inputs.prefix}\`.`;
 		})
 	),
-	new CommandArgument("literal", "ping", () => `pong (${client.ping}ms)`)
+	new CommandArgument("literal", "ping", () => `pong (${Math.floor(client.ping)}ms)`)
 ]);
 
 // cheating here because aliases haven't been implemented yet
@@ -634,7 +644,7 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw, startsNot
 	
 	let returnTxt;
 	if (numMines === 1) returnTxt = `Here's a board sized ${gameWidth}x${gameHeight} with 1 mine:`;
-	else                returnTxt = `Here's a board sized ${gameWidth}x${gameHeight} with ${numMines} mines:`; }
+	else                returnTxt = `Here's a board sized ${gameWidth}x${gameHeight} with ${numMines} mines:`;
 	
 	if (isRaw) { returnTxt += "\n```"; }
 	
@@ -677,7 +687,7 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw, startsNot
 	// Send the messages one by one
 	let i = 0;
 	function sendNextMessage() {
-		if (i < splitReturns.length) { message.channel.send(splitReturns[i++]).then(sendNextMessage, log); }
+		if (i < splitReturns.length) message.channel.send(splitReturns[i++]).then(sendNextMessage, log);
 	};
 	sendNextMessage();
 };
