@@ -4,12 +4,11 @@ Hello! I'm a bot that can generate a random Minesweeper game using the new spoil
 ## The Minesweeper Command
 The `!minesweeper` command works like this:
 ```
-!minesweeper [<gameWidth> <gameHeight> [<numMines>]]
+!minesweeper [<gameWidth> <gameHeight> [<numMines> [dontStartUncovered]]]
 ```
-* `gameWidth` is the amount of squares the game is wide, must be an integer from 1 to 40. If omitted, it'll be 8.
-* `gameHeight` is the amount of squares the game is high, must be an integer from 1 to 20. If omitted, it'll be 8.
-* `numMines` (optional) is the amount of mines that will be in the game. If omitted, I will choose by myself how many mines there should be depending on the size of the game.
-When you run this command, I will reply with a grid of spoiler tags. Click a spoiler tag to open the square and see if there's a mine inside!
+* `gameWidth` and `gameHeight` tell me how many squares the game should be wide and tall, for a maximum of 40x20. Default is 8x8.
+* `numMines` is how many mines there should be in the game, the more mines the more difficult it is. If omitted, I will pick a number based on the size of the game.
+When you run this command, I will reply with a grid of spoiler tags. Unless you wrote `dontStartUncovered`, the first zeroes will have already been opened for you.
 
 ## Other Commands
 Here's the other commands I listen to:
