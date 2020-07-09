@@ -1,6 +1,6 @@
 const botVersion = "1.8";
 
-// What you're probably looking for is the generateGame function, which is all the way at the bottom of the code (currently line 512).
+// What you're probably looking for is the generateGame function, which is all the way at the bottom of the code (currently line 552).
 
 // Replacement of console.log
 function log(message) {
@@ -563,7 +563,13 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw, startsNot
 		}
 	}
 	
-	// Fill it with mines!
+	// Takes in an object with x and y properties
+	function coordIsInGame(coord) {
+		return coord.y >= 0 && coord.y < game.length &&
+		       coord.x >= 0 && coord.x < game[coord.y].length;
+	};
+	
+	// Fill the game with mines!
 	for (var mine = 0; mine < numMines; mine++) {
 		var x = Math.floor(Math.random()*gameWidth),
 		    y = Math.floor(Math.random()*gameHeight);
@@ -579,9 +585,7 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw, startsNot
 		// Add 1 to neighbouring tiles
 		for (var j = 0; j < neighbourLocations.length; j++) {
 			let newCoord = {x: x + neighbourLocations[j].x, y: y + neighbourLocations[j].y};
-			if (newCoord.y >= 0 && newCoord.y < game.length &&
-			    newCoord.x >= 0 && newCoord.x < game[newCoord.y].length &&
-			    game[newCoord.y][newCoord.x] !== -1) {
+			if (coordIsInGame(newCoord) && game[newCoord.y][newCoord.x] !== -1) {
 				game[newCoord.y][newCoord.x]++;
 			}
 		}
@@ -619,18 +623,22 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw, startsNot
 
 		// Uncover a random region
 		if (zeroLocations.length > 0) {
+			
 			// Select random starting point
 			let locationsToUncover = [];
-			locationsToUncover.push(zeroLocations[Math.floor(Math.random()*zeroLocations.length)]);
+			let firstCoord = zeroLocations[Math.floor(Math.random()*zeroLocations.length)];
+			uncoveredLocations[firstCoord.y][firstCoord.x] = true;
+			locationsToUncover.push(firstCoord);
 
 			// Uncover neighbouring tiles
 			while (locationsToUncover.length > 0) {
 				for (var j = 0; j < neighbourLocations.length; j++) {
+					
 					let newCoord = {x: locationsToUncover[0].x + neighbourLocations[j].x, y: locationsToUncover[0].y + neighbourLocations[j].y};
-					if (newCoord.y < 0 || newCoord.y >= game.length ||
-					    newCoord.x < 0 || newCoord.x >= game[newCoord.y].length ||
-					    uncoveredLocations[newCoord.y][newCoord.x] === true) { continue; }
+					if (!coordIsInGame(newCoord) || uncoveredLocations[newCoord.y][newCoord.x] === true) continue;
 					uncoveredLocations[newCoord.y][newCoord.x] = true;
+					
+					// Continue uncovering
 					if (game[newCoord.y][newCoord.x] === 0) {
 						locationsToUncover.push(newCoord);
 					}
