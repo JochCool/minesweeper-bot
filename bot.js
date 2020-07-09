@@ -1,6 +1,6 @@
 const botVersion = "1.8";
 
-// What you're probably looking for is the generateGame function, which is all the way at the bottom of the code (currently line 552).
+// What you're probably looking for is the generateGame function, which is all the way at the bottom of the code (currently line 526).
 
 // Replacement of console.log
 function log(message) {
@@ -482,12 +482,15 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 		)
 	),
 	new CommandArgument("literal", "ms", null),
-	new CommandArgument("literal", "info", () => "Hello, I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! To generate a new minesweeper game, use the `!minesweeper` command (or its alias `!ms`):\n```\n!minesweeper [<gameWidth> <gameHeight> [<numMines>]]\n````gameWidth` and `gameHeight` tell me how many squares the game should be wide and tall, for a maximum of 40x20. If omitted, it will be 8x8.\n`numMines` is how many mines there should be in the game, the more mines the more difficult it is. If omitted, I will pick a number based on the size of the game.\nWhen you run this command, I will reply with a grid of spoiler tags. Click a spoiler tag to open the square and see if there's a mine inside!\n\nIf you don't know how to play Minesweeper, get out of the rock you've been living under and use the `!howtoplay` command. For a list of all commands and their syntaxes, use `!help`.\n\nI'm at version " + botVersion + " and my creator is @JochCool#1314. If you have any questions or other remarks, you can DM him. Furthermore, my source code is available on GitHub, for those interested: https://github.com/JochCool/minesweeper-bot. You can submit bug reports and feature requests there.\nNote: sometimes you might not get a response from me when you run a command. Then that's probably because I'm temporarily offline, in which case please DM JochCool so he can fix it.\n\nThank you for using me!"),
-	new CommandArgument("literal", "howtoplay", () => "In Minesweeper, you get a rectangular grid of squares. In some of those squares, mines are hidden, but you don't know which squares. The objective is 'open' all the squares that don't have a hidden mine, but to not touch the ones that do.\n\nLet's start with an example. " + generateGame(5, 5, 3) + "\n\nTo open a mine, click the spoiler tag. So go click one now. The contents of that square will be revealed when you do so. If it's a mine (:bomb:), you lose! If it's not a mine, you get a mysterious number instead, like :two:. This number is there to help you, as it indicates how many mines are in the eight squares that touch it (horizontally, vertically or diagonally). Using this information and some good logic, you can figure out the location of most of the mines!\n\nYes, sometimes it's impossible to know which square is a mine; in that case you'll have to guess. But you can usually get very far if you've praciced enough, so go try it out! Use the `!minesweeper` command to generate a new random game."),
+	new CommandArgument("literal", "info", message => {
+		let prefix = getCommandsPrefix(message);
+		let minesweeperSyntax = commands.child.find(arg => arg.name == "minesweeper").getChildSyntax(true);
+		return `Hello, I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! To generate a new minesweeper game, use the \`${prefix}minesweeper\` command (or its alias \`${prefix}ms\`):\n\`\`\`\n${prefix}minesweeper ${minesweeperSyntax}\n\`\`\`\`gameWidth\` and \`gameHeight\` tell me how many squares the game should be wide and tall, for a maximum of 40x20. Default is 8x8.\n\`numMines\` is how many mines there should be in the game, the more mines the more difficult it is. If omitted, I will pick a number based on the size of the game.\nWhen you run this command, I will reply with a grid of spoiler tags. Unless you wrote \`dontStartUncovered\`, the first zeroes will have already been opened for you.\n\nIf you don't know how to play Minesweeper, get out of the rock you've been living under and use the \`${prefix}howtoplay\` command. For a list of all commands and their syntaxes, use \`${prefix}help\`.\n\nMy creator is @JochCool#1314 and I'm at version ${botVersion}. For those interested, my source code is available on GitHub: https://github.com/JochCool/minesweeper-bot. You can submit bug reports and feature requests there.\nThank you for using me!`),
+	new CommandArgument("literal", "howtoplay", () => `In Minesweeper, you get a rectangular grid of squares. In some of those squares, mines are hidden, but you don't know which squares. The objective is 'open' all the squares that don't have a hidden mine, but to not touch the ones that do.\n\nLet's start with an example. ${generateGame(5, 5, 3)}\nTo open a mine, click the spoiler tag. So go click one now. The contents of that square will be revealed when you do so. If it's a mine (:bomb:), you lose! If it's not a mine, you get a mysterious number instead, like :two:. This number is there to help you, as it indicates how many mines are in the eight squares that touch it (horizontally, vertically or diagonally). Using this information and some good logic, you can figure out the location of most of the mines!`),
 	new CommandArgument("literal", "news", () => {
 		let returnTxt = "These were my past three updates:\n";
 		for (var i = 0; i < 3 && i < updates.length; i++) {
-			returnTxt += `\nVersion ${updates[i].name} — ${updates[i].description}`;
+			returnTxt += `\nVersion ${updates[i].name} \u2015 ${updates[i].description}`; // U+2015 = horizontal bar
 		}
 		return returnTxt;
 	}),
@@ -508,7 +511,7 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 			return `The prefix of this server has been changed from \`${prevprefix}\` to \`${inputs.prefix}\`.`;
 		})
 	),
-	new CommandArgument("literal", "ping", () => `pong (${Math.floor(client.ping)}ms)`)
+	new CommandArgument("literal", "ping", () => `pong (${Math.floor(client.ping)}ms heartbeat)`)
 ]);
 
 // cheating here because aliases haven't been implemented yet
@@ -532,7 +535,7 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw, startsNot
 		gameWidth = 8;
 	}
 	else if (gameWidth <= 0 || gameHeight <= 0) {
-		return "Uh, I'm not smart enough to generate a maze of a negative size. I can only use positive numbers. Sorry :cry:";
+		return `Uh, I'm not smart enough to generate a maze sized ${gameWidth} by ${gameHeight}. I can only use positive numbers. Sorry :cry:`;
 	}
 	if (isNaN(gameHeight)) {
 		gameHeight = 8;
