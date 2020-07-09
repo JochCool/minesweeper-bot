@@ -177,7 +177,11 @@ function executeCommand(message, command) {
 		
 		// loop through arguments to run the command
 		while (currentArgument.child) {
-			let syntax = currentArgument.getChildSyntax();
+			
+			// In case we'll need to remind you of the syntax
+			let syntax = `\`&{currentArgument.getChildSyntax(false, true)}\``;
+			if (currentArgument.run) syntax += " (optional)";
+			
 			currentArgument = currentArgument.child;
 			
 			// input type check
@@ -199,7 +203,7 @@ function executeCommand(message, command) {
 			
 			if (!inputAllowed) {
 				if (currentArgument != commands.child) {
-					message.channel.send(`Invalid argument: \`${input}\`. Expected \`${syntax}\`.`).catch(log);
+					message.channel.send(`Invalid argument: "\`${input}\`". Expected ${syntax}.`).catch(log);
 				}
 				return;
 			}
@@ -216,7 +220,7 @@ function executeCommand(message, command) {
 			if (thisInputEnd < 0 || command == "" || !currentArgument.child) {
 				commandsThisHour++;
 				if (!currentArgument.run) {
-					message.channel.send(`You're missing one or more required arguments: \`${currentArgument.getChildSyntax(true)}\`.`).catch(log);
+					message.channel.send(`You're missing one or more required arguments: \`${currentArgument.getChildSyntax(true, true)}\`.`).catch(log);
 					return;
 				}
 				let commandResult = currentArgument.run(message, inputs);
@@ -347,8 +351,8 @@ CommandArgument.prototype.isInputAllowed = function(command) {
 	return this.type == "text";
 };
 
-// Returns the syntax of this argument's child, properly formatted.
-CommandArgument.prototype.getChildSyntax = function(withChildren) {
+// Returns the syntax of this argument's child, properly formatted. (If requiredOnly is true, will never return things in square brackets)
+CommandArgument.prototype.getChildSyntax = function(withChildren, requiredOnly) {
 	if (!this.hasChildren()) {
 		return "";
 	}
@@ -385,20 +389,20 @@ CommandArgument.prototype.getChildSyntax = function(withChildren) {
 		}
 	}
 	
-	// Add children's syntax if input was true
+	// Add children's syntax if desired
 	if (withChildren) {
 		if (Array.isArray(this.child)) {
 			if (childrenHaveChildren) {
 				syntax += " ...";
 			}
 		}
-		else if (this.child.hasChildren()) {
-			syntax += " " + this.child.getChildSyntax(true);
+		else if (this.child.hasChildren() && (!requiredOnly && this.child.run)) {
+			syntax += " " + this.child.getChildSyntax(true, requiredOnly);
 		}
 	}
 	
-	// Children are optional
-	if (this.run) {
+	// Optional children
+	if (!requiredOnly && this.run) {
 		syntax = `[${syntax}]`;
 	}
 	
