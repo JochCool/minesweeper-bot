@@ -1,5 +1,6 @@
 {
 	"updates": [
+		{"name": "1.8", "description": "There is now also an option to start games without having the first region uncovered. Plus some minor fixes."},
 		{"name": "1.7", "description": "When you create a game, I will now automatically uncover the first region for you."},
 		{"name": "1.6", "description": "Added `!minesweeperraw`/`!msraw`. It's the same as the normal minesweeper commands, but it gives you the raw text/copypasta of the game, so you can share it with others. There's also a new `!setprefix` command to change the `!` prefix to something else. Furthermore, the response speed and uptime of the bot have been vastly improved."},
 		{"name": "1.5", "description": "`gameWidth` and `gameHeight` are now optional."},

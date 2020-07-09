@@ -1,75 +1,128 @@
-const botVersion = "1.7";
+const botVersion = "1.8";
 
-// A portion of this code is copied from my other project, Entrapment Bot, which is a private bot I use on my own Discord server:
-// https://github.com/JochCool/entrapment-bot
+// What you're probably looking for is the generateGame function, which is all the way at the bottom of the code (currently line 526).
 
 // Replacement of console.log
 function log(message) {
 	if (message instanceof Error) {
 		message = message.stack;
 	}
-	console.log("[" + new Date().toLocaleTimeString() + "] " + message);
+	var now = new Date();
+	console.log(`[Minesweeper Bot] [${now.getUTCFullYear()}-${toTwoDigitString(now.getUTCMonth()+1)}-${toTwoDigitString(now.getUTCDate())} ${toTwoDigitString(now.getUTCHours())}:${toTwoDigitString(now.getUTCMinutes())}:${toTwoDigitString(now.getUTCSeconds())}] ${message}`);
+};
+function toTwoDigitString(num) {
+	var str = num.toString();
+	if (str.length == 1) return "0" + str;
+	return str;
 };
 
-log("Starting Minesweeper Bot version " + botVersion);
+log(`Starting Minesweeper Bot version ${botVersion}`);
 
 /** ───── BECOME A DISCORD BOT ───── **/
 // This section is to load the modules, initialise the bot and create some general functions
 
 // Load everything
-const Discord = require('discord.js');
-const DBLAPI = require('dblapi.js');
-const fs = require('fs');
-const auth = require('./auth.json');
-const package = require('./package.json');
-const updates = require('./news.json').updates;
-var guildprefixes = require('./guildprefixes.json');
+const Discord = require("discord.js");
+const fs = require("fs");
+const path = require("path");
+const auth = require("./auth.json");
+const package = require("./package.json");
+const updates = require("./news.json").updates;
+var guildprefixes = require("./guildprefixes.json");
 
 log("All modules loaded");
 if (package.version != botVersion) {
-	log("Inconsistency between package version (" + package.version + ") and code version (" + botVersion + ")");
+	log(`Inconsistency between package version (${package.version}) and code version (${botVersion})`);
+}
+
+// Censored bot token?
+if (!auth.bottoken || auth.bottoken == "CENSORED") {
+	log("Please fill in the token of your Discord Bot (can be found at https://discordapp.com/developers/applications).");
+	process.exit();
 }
 
 // Initialise Discord Bot
 const client = new Discord.Client();
 client.login(auth.bottoken).catch(log);
 
-// Initalise connetion with DBLAPI (discordbots.org)
-const dbl = new DBLAPI(auth.dbltoken, client);
-dbl.on('error', log);
+// Initalise connetion with DBLAPI (the API for top.gg / discordbots.org)
+if (auth.dbltoken && auth.dbltoken != "CENSORED") {
+	const DBLAPI = require("dblapi.js");
+	new DBLAPI(auth.dbltoken, client).on("error", log);
+}
+else {
+	log("Starting bot without DBLAPI token.");
+}
 
-// setup to logging number of commands executed this hour
-var commandsThisHour = 0;
-function logCommandsThisHour() {
-	log("Num executed commands this hour: " + commandsThisHour);
-	commandsThisHour = 0;
-	client.setTimeout(logCommandsThisHour, getTimeUntilNextHour());
+function getGuildCount() {
+	return client.guilds.cache.array().length;
 };
+
+// setup for hourly reports in the log
+var commandsThisHour = 0;
+var reconnectsThisHour = 0;
+function report() {
+	log(`Hourly report: ${commandsThisHour} commands, ${reconnectsThisHour} reconnects.`);
+	commandsThisHour = 0;
+	reconnectsThisHour = 0;
+	client.setTimeout(report, getTimeUntilNextHour());
+};
+// This function appears to work but time is weird and hard to test so if there is an oversight please tell me
 function getTimeUntilNextHour() {
 	let now = new Date();
 	return (59 - now.getMinutes())*60000 + (60 - now.getSeconds())*1000;
 };
 
-client.setTimeout(logCommandsThisHour, getTimeUntilNextHour());
+client.setTimeout(report, getTimeUntilNextHour());
 
 // Misc event handlers
 
-client.on('ready', () => {
-	log("Ready!");
+client.on("ready", () => {
+	log(`Ready! Current guild count: ${getGuildCount()}`);
 	client.user.setActivity("!minesweeper", {"type": "PLAYING"}).catch(log);
 });
 
-client.on('disconnected', function() {
-	log("Disconnected from the server. Stopping!");
-	process.exit();
+client.on("disconnected", event => {
+	log("WebSocket disconnected! CloseEvent:");
+	console.log(event);
 });
 
-client.on('error', function() {
+client.on("reconnecting", () => {
+	//log("Reconnecting...");
+	reconnectsThisHour++;
+});
+
+/*
+client.on("resume", replayed => {
+	log(`Resumed! Replayed ${replayed} events.`);
+});
+//*/
+
+client.on("ratelimit", info => {
+	log("Being ratelimited! Info:");
+	console.log(info);
+});
+
+client.on("error", () => {
 	log("WebSocket error");
 });
 
-client.on('guildCreate', guild => {
-	log("Joined a new guild! It's called \"" + guild.name + "\" (Current count: " + client.guilds.array().length + ")");
+client.on("warn", warning => {
+	log(`Emitted warning: ${warning}`);
+});
+
+/*
+client.on("debug", info => {
+	log(`Emitted debug: ${info});
+]);
+//*/
+
+client.on("guildCreate", guild => {
+	log(`Joined a new guild! It's called "${guild.name}" (Current count: ${getGuildCount()})`);
+});
+
+client.on("guildDelete", guild => {
+	log(`Left a guild :(. It was called "${guild.name}" (Current count: ${getGuildCount()})`);
 });
 
 /** ───── MESSAGE PARSER ───── **/
@@ -85,9 +138,12 @@ function getCommandsPrefix(guildOrMessage) {
 			id = guildOrMessage.guild.id;
 		}
 		else {
+			// Default prefix for DM channels
 			return defaultprefix;
 		}
 	}
+	
+	// Has it been stored?
 	if (typeof guildprefixes[id] == "string") {
 		return guildprefixes[id];
 	}
@@ -103,7 +159,7 @@ client.on('message', message => {
 	
 	// Commands
 	let prefix = getCommandsPrefix(message);
-	if (message.content.startsWith(prefix) && (!message.guild || message.guild.me.hasPermission("SEND_MESSAGES"))) {
+	if (message.content.startsWith(prefix) && (!message.guild || message.channel.memberPermissions(message.guild.me).has("SEND_MESSAGES"))) {
 		executeCommand(message, message.content.substring(prefix.length));
 	}
 });
@@ -121,7 +177,11 @@ function executeCommand(message, command) {
 		
 		// loop through arguments to run the command
 		while (currentArgument.child) {
-			let syntax = currentArgument.getChildSyntax();
+			
+			// In case we'll need to remind you of the syntax
+			let syntax = `\`&{currentArgument.getChildSyntax(false, true)}\``;
+			if (currentArgument.run) syntax += " (optional)";
+			
 			currentArgument = currentArgument.child;
 			
 			// input type check
@@ -143,7 +203,7 @@ function executeCommand(message, command) {
 			
 			if (!inputAllowed) {
 				if (currentArgument != commands.child) {
-					message.channel.send("Invalid argument: `" + input + "`. Expected `" + syntax + "`.").catch(log);
+					message.channel.send(`Invalid argument: "\`${input}\`". Expected ${syntax}.`).catch(log);
 				}
 				return;
 			}
@@ -160,7 +220,7 @@ function executeCommand(message, command) {
 			if (thisInputEnd < 0 || command == "" || !currentArgument.child) {
 				commandsThisHour++;
 				if (!currentArgument.run) {
-					message.channel.send("You're missing one or more required arguments: `" + currentArgument.getChildSyntax(true) + "`.").catch(log);
+					message.channel.send(`You're missing one or more required arguments: \`${currentArgument.getChildSyntax(true, true)}\`.`).catch(log);
 					return;
 				}
 				let commandResult = currentArgument.run(message, inputs);
@@ -194,7 +254,6 @@ There are various types of arguments:
 - "text" (you can fill in whatever text you want)
 - "number" (you have to fill in a valid number)
 - "integer" (you have to fill in a valid integer)
-- "date" (you have to fill in a valid Date, preferrably using ISO 8601 format)
 - "root" (not an argument, this is the first node in the tree)
 
 Some arguments have a run function. This function gets executed if this argument was the last one to be specified in the command.
@@ -288,30 +347,12 @@ CommandArgument.prototype.isInputAllowed = function(command) {
 		}
 		return true;
 	}
-	if (this.type == "date") {
-		let date;
-		if (input.startsWith('T')) {
-			let now = new Date();
-			
-			date = Date.parse(now.getFullYear() + "-" + (now.getMonth()+1).getStringWithPrecedingZeroes(2) + "-" + now.getDate().getStringWithPrecedingZeroes(2) + input);
-			//log(now.getFullYear() + "-" + now.getMonth() + "-" + now.getDate() + input);
-		}
-		else {
-			date = Date.parse(input);
-		}
-		log("parsed date: "+date);
-		if (isNaN(date)) {
-			return false;
-		}
-		input = date;
-		return true;
-	}
 	
 	return this.type == "text";
 };
 
-// Returns the syntax of this argument's child, properly formatted.
-CommandArgument.prototype.getChildSyntax = function(withChildren) {
+// Returns the syntax of this argument's child, properly formatted. (If requiredOnly is true, will never return things in square brackets)
+CommandArgument.prototype.getChildSyntax = function(withChildren, requiredOnly) {
 	if (!this.hasChildren()) {
 		return "";
 	}
@@ -329,7 +370,7 @@ CommandArgument.prototype.getChildSyntax = function(withChildren) {
 				syntax += this.child[i].name;
 			}
 			else {
-				syntax += "<" + this.child[i].name + ">";
+				syntax += `<${this.child[i].name}>`;
 			}
 			if (this.child[i].child) {
 				childrenHaveChildren = true;
@@ -344,25 +385,25 @@ CommandArgument.prototype.getChildSyntax = function(withChildren) {
 			syntax += this.child.name;
 		}
 		else {
-			syntax += "<" + this.child.name + ">";
+			syntax += `<${this.child.name}>`;
 		}
 	}
 	
-	// Add children's syntax if input was true
+	// Add children's syntax if desired
 	if (withChildren) {
 		if (Array.isArray(this.child)) {
 			if (childrenHaveChildren) {
 				syntax += " ...";
 			}
 		}
-		else if (this.child.hasChildren()) {
-			syntax += " " + this.child.getChildSyntax(true);
+		else if (this.child.hasChildren() && (!requiredOnly && this.child.run)) {
+			syntax += " " + this.child.getChildSyntax(true, requiredOnly);
 		}
 	}
 	
-	// Children are optional
-	if (this.run) {
-		syntax = "[" + syntax + "]";
+	// Optional children
+	if (!requiredOnly && this.run) {
+		syntax = `[${syntax}]`;
 	}
 	
 	return syntax;
@@ -381,13 +422,13 @@ CommandArgument.prototype.getAllChildSyntaxes = function() {
 			let thesesyntaxes = this.child[i].getAllChildSyntaxes();
 			let childName = this.child[i].name;
 			if (this.child[i].type != "literal") {
-				childName = "<" + childName + ">";
+				childName = `<${childName}>`;
 			}
 			if (this.run) {
-				childName = "[" + childName + "]";
+				childName = `[${childName}]`;
 			}
 			for (var s = 0; s < thesesyntaxes.length; s++) {
-				syntaxes.push(childName + " " + thesesyntaxes[s]);
+				syntaxes.push(`${childName} ${thesesyntaxes[s]}`);
 			}
 		}
 	}
@@ -397,13 +438,13 @@ CommandArgument.prototype.getAllChildSyntaxes = function() {
 		syntaxes = this.child.getAllChildSyntaxes();
 		let childName = this.child.name;
 		if (this.child.type != "literal") {
-			childName = "<" + childName + ">";
+			childName = `<${childName}>`;
 		}
 		if (this.run) {
-			childName = "[" + childName + "]";
+			childName = `[${childName}]`;
 		}
 		for (var s = 0; s < syntaxes.length; s++) {
-			syntaxes[s] = childName + " " + syntaxes[s];
+			syntaxes[s] = `${childName} ${syntaxes[s]}`;
 		}
 	}
 	return syntaxes;
@@ -414,17 +455,19 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 	new CommandArgument("literal", "help", message => {
 		let returnTxt = "";
 		for (var i = 0; i < commands.child.length; i++) {
-			returnTxt += "\n• `" + getCommandsPrefix(message) + commands.child[i].name + " " + commands.child[i].getChildSyntax(true) + "`";
+			returnTxt += `\n• \`${getCommandsPrefix(message)}${commands.child[i].name} ${commands.child[i].getChildSyntax(true)}\``;
 		}
 		if (returnTxt == "") {
 			return "You cannot execute any commands!";
 		}
-		return "You can execute the following commands:" + returnTxt;
+		return `You can execute the following commands: ${returnTxt}`;
 	}),
 	new CommandArgument("literal", "minesweeperraw", (message, inputs) => generateGame(undefined, undefined, undefined, message, true),
 		new CommandArgument("integer", "gameWidth", null, 
 			new CommandArgument("integer", "gameHeight", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message, true),
-				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true))
+				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true),
+					new CommandArgument("literal", "dontStartUncovered", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true, true))
+				)
 			)
 		)
 	),
@@ -432,17 +475,22 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 	new CommandArgument("literal", "minesweeper", (message, inputs) => generateGame(undefined, undefined, undefined, message),
 		new CommandArgument("integer", "gameWidth", null, 
 			new CommandArgument("integer", "gameHeight", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message),
-				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message))
+				new CommandArgument("integer", "numMines", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message),
+					new CommandArgument("literal", "dontStartUncovered", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, false, true))
+				)
 			)
 		)
 	),
 	new CommandArgument("literal", "ms", null),
-	new CommandArgument("literal", "info", () => "Hello, I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! To generate a new minesweeper game, use the `!minesweeper` command (or its alias `!ms`):\n```\n!minesweeper [<gameWidth> <gameHeight> [<numMines>]]\n````gameWidth` and `gameHeight` tell me how many squares the game should be wide and tall, for a maximum of 40x20. If omitted, it will be 8x8.\n`numMines` is how many mines there should be in the game, the more mines the more difficult it is. If omitted, I will pick a number based on the size of the game.\nWhen you run this command, I will reply with a grid of spoiler tags. Click a spoiler tag to open the square and see if there's a mine inside!\n\nIf you don't know how to play Minesweeper, get out of the rock you've been living under and use the `!howtoplay` command. For a list of all commands and their syntaxes, use `!help`.\n\nI'm at version " + botVersion + " and my creator is @JochCool#1314. If you have any questions or other remarks, you can DM him. Furthermore, my source code is available on GitHub, for those interested: https://github.com/JochCool/minesweeper-bot. You can submit bug reports and feature requests there.\nNote: sometimes you might not get a response from me when you run a command. Then that's probably because I'm temporarily offline, in which case please DM JochCool so he can fix it.\n\nThank you for using me!"),
-	new CommandArgument("literal", "howtoplay", () => "In Minesweeper, you get a rectangular grid of squares. In some of those squares, mines are hidden, but you don't know which squares. The objective is 'open' all the squares that don't have a hidden mine, but to not touch the ones that do.\n\nLet's start with an example. " + generateGame(5, 5, 3) + "\n\nTo open a mine, click the spoiler tag. So go click one now. The contents of that square will be revealed when you do so. If it's a mine (:bomb:), you lose! If it's not a mine, you get a mysterious number instead, like :two:. This number is there to help you, as it indicates how many mines are in the eight squares that touch it (horizontally, vertically or diagonally). Using this information and some good logic, you can figure out the location of most of the mines!\n\nYes, sometimes it's impossible to know which square is a mine; in that case you'll have to guess. But you can usually get very far if you've praciced enough, so go try it out! Use the `!minesweeper` command to generate a new random game."),
+	new CommandArgument("literal", "info", message => {
+		let prefix = getCommandsPrefix(message);
+		let minesweeperSyntax = commands.child.find(arg => arg.name == "minesweeper").getChildSyntax(true);
+		return `Hello, I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! To generate a new minesweeper game, use the \`${prefix}minesweeper\` command (or its alias \`${prefix}ms\`):\n\`\`\`\n${prefix}minesweeper ${minesweeperSyntax}\n\`\`\`\`gameWidth\` and \`gameHeight\` tell me how many squares the game should be wide and tall, for a maximum of 40x20. Default is 8x8.\n\`numMines\` is how many mines there should be in the game, the more mines the more difficult it is. If omitted, I will pick a number based on the size of the game.\nWhen you run this command, I will reply with a grid of spoiler tags. Unless you wrote \`dontStartUncovered\`, the first zeroes will have already been opened for you.\n\nIf you don't know how to play Minesweeper, get out of the rock you've been living under and use the \`${prefix}howtoplay\` command. For a list of all commands and their syntaxes, use \`${prefix}help\`.\n\nMy creator is @JochCool#1314 and I'm at version ${botVersion}. For those interested, my source code is available on GitHub: https://github.com/JochCool/minesweeper-bot. You can submit bug reports and feature requests there.\nThank you for using me!`),
+	new CommandArgument("literal", "howtoplay", () => `In Minesweeper, you get a rectangular grid of squares. In some of those squares, mines are hidden, but you don't know which squares. The objective is 'open' all the squares that don't have a hidden mine, but to not touch the ones that do.\n\nLet's start with an example. ${generateGame(5, 5, 3)}\nTo open a mine, click the spoiler tag. So go click one now. The contents of that square will be revealed when you do so. If it's a mine (:bomb:), you lose! If it's not a mine, you get a mysterious number instead, like :two:. This number is there to help you, as it indicates how many mines are in the eight squares that touch it (horizontally, vertically or diagonally). Using this information and some good logic, you can figure out the location of most of the mines!`),
 	new CommandArgument("literal", "news", () => {
 		let returnTxt = "These were my past three updates:\n";
 		for (var i = 0; i < 3 && i < updates.length; i++) {
-			returnTxt += "\nVersion " + updates[i].name + " — " + updates[i].description;
+			returnTxt += `\nVersion ${updates[i].name} \u2015 ${updates[i].description}`; // U+2015 = horizontal bar
 		}
 		return returnTxt;
 	}),
@@ -459,11 +507,11 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 			}
 			let prevprefix = getCommandsPrefix(message.guild);
 			guildprefixes[message.guild.id] = inputs.prefix;
-			fs.writeFile("guildprefixes.json", JSON.stringify(guildprefixes, null, 4), err => { if (err) { log(err); } });
-			return "The prefix of this server has been changed from `" + prevprefix + "` to `" + inputs.prefix + "`.";
+			fs.writeFile(path.resolve(__dirname, "guildprefixes.json"), JSON.stringify(guildprefixes, null, 4), err => { if (err) { log(err); } });
+			return `The prefix of this server has been changed from \`${prevprefix}\` to \`${inputs.prefix}\`.`;
 		})
 	),
-	new CommandArgument("literal", "ping", () => "pong (" + client.ping + "ms)")
+	new CommandArgument("literal", "ping", () => `pong (${Math.floor(client.ping)}ms heartbeat)`)
 ]);
 
 // cheating here because aliases haven't been implemented yet
@@ -478,14 +526,16 @@ commands.child[4].run = commands.child[3].run;
 const neighbourLocations = [{x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1}, {x: 1, y: 0}, {x: 1, y: 1}, {x: 0, y: 1}, {x: -1, y: 1}, {x: -1, y: 0}];
 
 // Gets called when you run the `!minesweeper` command
-function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
+function generateGame(gameWidth, gameHeight, numMines, message, isRaw, startsNotUncovered) {
+	
+	/** ──────── CHECKS ──────── **/
 	
 	// Check game size
 	if (isNaN(gameWidth)) {
 		gameWidth = 8;
 	}
 	else if (gameWidth <= 0 || gameHeight <= 0) {
-		return "Uh, I'm not smart enough to generate a maze of that size. I can only use positive numbers. Sorry :cry:";
+		return `Uh, I'm not smart enough to generate a maze sized ${gameWidth} by ${gameHeight}. I can only use positive numbers. Sorry :cry:`;
 	}
 	if (isNaN(gameHeight)) {
 		gameHeight = 8;
@@ -507,9 +557,12 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 		}
 	}
 	
-	// Generate game (2D array sorted [y][x], -1 means a mine, positive number is the amount of neighbouring mines)
+	/** ──────── CREATE GAME ──────── **/
+	
+	// 2D array that contains the game, sorted [y][x]. -1 means a mine, positive number is the amount of neighbouring mines
 	var game = [];
 	
+	// Initialise the game array with zeroes
 	for (var y = 0; y < gameHeight; y++) {
 		game.push([]);
 		for (var x = 0; x < gameWidth; x++) {
@@ -517,7 +570,13 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 		}
 	}
 	
-	// Fill it with mines!
+	// Takes in an object with x and y properties
+	function coordIsInGame(coord) {
+		return coord.y >= 0 && coord.y < game.length &&
+		       coord.x >= 0 && coord.x < game[coord.y].length;
+	};
+	
+	// Fill the game with mines!
 	for (var mine = 0; mine < numMines; mine++) {
 		var x = Math.floor(Math.random()*gameWidth),
 		    y = Math.floor(Math.random()*gameHeight);
@@ -533,14 +592,12 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 		// Add 1 to neighbouring tiles
 		for (var j = 0; j < neighbourLocations.length; j++) {
 			let newCoord = {x: x + neighbourLocations[j].x, y: y + neighbourLocations[j].y};
-			if (newCoord.y >= 0 && newCoord.y < game.length &&
-			    newCoord.x >= 0 && newCoord.x < game[newCoord.y].length &&
-			    game[newCoord.y][newCoord.x] !== -1) {
+			if (coordIsInGame(newCoord) && game[newCoord.y][newCoord.x] !== -1) {
 				game[newCoord.y][newCoord.x]++;
 			}
 		}
 		
-		/* Old code:
+		/* Old code (easier to understand):
 		if (x > 0                && y > 0             && game[y-1][x-1] !== -1) { game[y-1][x-1]++; }
 		if (                        y > 0             && game[y-1][x  ] !== -1) { game[y-1][x  ]++; }
 		if (x < game[y].length-1 && y > 0             && game[y-1][x+1] !== -1) { game[y-1][x+1]++; }
@@ -552,46 +609,57 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 		//*/
 	}
 	
-	// Find all the zeroes in this game (for uncovering)
-	let zeroLocations = [];
-	for (var y = 0; y < game.length; y++) {
-		for (var x = 0; x < game[y].length; x++) {
-			if (game[y][x] === 0) {
-				zeroLocations.push({x: x, y: y});
-			}
-		}
-	}
+	/** ──────── UNCOVERING ──────── **/
 	
-	// Uncover a random region
+	// Initialise vars
+	let zeroLocations = []; // Array of {x,y} objects, will contain locations of all zeroes in the game
 	let uncoveredLocations = []; // 2D array, each value is either nothing (not uncovered) or true (uncovered)
 	for (var y = 0; y < game.length; y++) {
 		uncoveredLocations.push([]);
 	}
-	if (zeroLocations.length > 0) {
-		// Select random starting point
-		let locationsToUncover = [];
-		locationsToUncover.push(zeroLocations[Math.floor(Math.random()*zeroLocations.length)]);
-		
-		// Uncover neighbouring tiles
-		while (locationsToUncover.length > 0) {
-			for (var j = 0; j < neighbourLocations.length; j++) {
-				let newCoord = {x: locationsToUncover[0].x + neighbourLocations[j].x, y: locationsToUncover[0].y + neighbourLocations[j].y};
-				if (newCoord.y < 0 || newCoord.y >= game.length ||
-				    newCoord.x < 0 || newCoord.x >= game[newCoord.y].length ||
-				    uncoveredLocations[newCoord.y][newCoord.x] === true) { continue; }
-				uncoveredLocations[newCoord.y][newCoord.x] = true;
-				if (game[newCoord.y][newCoord.x] === 0) {
-					locationsToUncover.push(newCoord);
+	
+	if (!startsNotUncovered) {
+		// Find all the zeroes in this game
+		for (var y = 0; y < game.length; y++) {
+			for (var x = 0; x < game[y].length; x++) {
+				if (game[y][x] === 0) {
+					zeroLocations.push({x: x, y: y});
 				}
 			}
-			locationsToUncover.shift();
+		}
+
+		// Uncover a random region
+		if (zeroLocations.length > 0) {
+			
+			// Select random starting point
+			let locationsToUncover = [];
+			let firstCoord = zeroLocations[Math.floor(Math.random()*zeroLocations.length)];
+			uncoveredLocations[firstCoord.y][firstCoord.x] = true;
+			locationsToUncover.push(firstCoord);
+
+			// Uncover neighbouring tiles
+			while (locationsToUncover.length > 0) {
+				for (var j = 0; j < neighbourLocations.length; j++) {
+					
+					let newCoord = {x: locationsToUncover[0].x + neighbourLocations[j].x, y: locationsToUncover[0].y + neighbourLocations[j].y};
+					if (!coordIsInGame(newCoord) || uncoveredLocations[newCoord.y][newCoord.x] === true) continue;
+					uncoveredLocations[newCoord.y][newCoord.x] = true;
+					
+					// Continue uncovering
+					if (game[newCoord.y][newCoord.x] === 0) {
+						locationsToUncover.push(newCoord);
+					}
+				}
+				locationsToUncover.shift();
+			}
 		}
 	}
 	
-	// Create the reply
+	/** ──────── CREATE REPLY ──────── **/
+	
 	let returnTxt;
-	if (numMines === 1) { returnTxt = "Here's a board sized " + gameWidth + "x" + gameHeight + " with 1 mine:"; }
-	else                { returnTxt = "Here's a board sized " + gameWidth + "x" + gameHeight + " with " + numMines + " mines:"; }
+	if (numMines === 1) returnTxt = `Here's a board sized ${gameWidth}x${gameHeight} with 1 mine:`;
+	else                returnTxt = `Here's a board sized ${gameWidth}x${gameHeight} with ${numMines} mines:`;
 	
 	if (isRaw) { returnTxt += "\n```"; }
 	
@@ -601,11 +669,11 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 			if (game[y][x] === -1) {
 				returnTxt += "||:bomb:||";
 			}
-			else if (uncoveredLocations[y][x]) {
+			else if (!startsNotUncovered && uncoveredLocations[y][x]) {
 				returnTxt += numberEmoji[game[y][x]];
 			}
 			else {
-				returnTxt += "||" + numberEmoji[game[y][x]] + "||";
+				returnTxt += `||${numberEmoji[game[y][x]]}||`;
 			}
 		}
 	}
@@ -623,10 +691,16 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 		let splitIndex = returnTxt.substring(0, 1900).lastIndexOf("\n");
 		if (splitIndex === -1) {
 			log("A too large message was generated after creating a game.");
-			return "Sorry, your message appears to be too large to send. Please try a smaller game next time.";
+			return "Sorry, your message appears to be too large to send (because of Discord's character limit). Please try a smaller game next time.";
 		}
 		splitReturns.push(returnTxt.substring(0, splitIndex));
 		returnTxt = returnTxt.substring(splitIndex+1);
+		
+		// Also split the triple backticks
+		if (isRaw) {
+			splitReturns[splitReturns.length-1] += "\n```";
+			returnTxt = "```\n" + returnTxt;
+		}
 	} while (returnTxt.length > 1900)
 	
 	splitReturns.push(returnTxt);
@@ -634,7 +708,7 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw) {
 	// Send the messages one by one
 	let i = 0;
 	function sendNextMessage() {
-		if (i < splitReturns.length) { message.channel.send(splitReturns[i++]).then(sendNextMessage, log); }
+		if (i < splitReturns.length) message.channel.send(splitReturns[i++]).then(sendNextMessage, log);
 	};
 	sendNextMessage();
 };
