@@ -1,23 +1,25 @@
 {
-  "id": "540917634695168010",
-  "name": "Minesweeper Bot",
-  "version": "1.8",
-  "description": "I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! Use the command \"!minesweeper\" or \"!ms\" to generate a game!\nCreated by @JochCool#1314.",
-  "author": "JochCool",
-  "main": "bot.js",
-  "files": [
-    "bot.js",
-    "auth.json",
-    "guildprefixes.json",
-    "news.json"
-  ],
-  "repository": "https://github.com/JochCool/minesweeper-bot",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/JochCool/minesweeper-bot/issues/new?template=bug_report.md&labels=bug"
-  },
-  "dependencies": {
-    "dblapi.js": "^2.4.0",
-    "discord.js": "^12.2.0"
-  }
+	"id": "540917634695168010",
+	"name": "Minesweeper Bot",
+	"version": "1.8.1",
+	"description": "I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! Use the command \"!minesweeper\" or \"!ms\" to generate a game!\nCreated by @JochCool#1314.",
+	"author": "JochCool",
+	"main": "index.js",
+	"files": [
+		"index.js",
+		"bot.js",
+		"util.js",
+		"auth.json",
+		"guildprefixes.json",
+		"news.json"
+	],
+	"repository": "https://github.com/JochCool/minesweeper-bot",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/JochCool/minesweeper-bot/issues/new?template=bug_report.md&labels=bug"
+	},
+	"dependencies": {
+		"dblapi.js": "^2.4.0",
+		"discord.js": "^12.2.0"
+	}
 }

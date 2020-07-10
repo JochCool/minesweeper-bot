@@ -1,45 +1,22 @@
-const botVersion = "1.8";
+// Code for each individual shard
+// Author: JochCool
 
 // What you're probably looking for is the generateGame function, which is all the way at the bottom of the code (currently line 526).
 
-// Replacement of console.log
-function log(message) {
-	if (message instanceof Error) {
-		message = message.stack;
-	}
-	var now = new Date();
-	console.log(`[Minesweeper Bot] [${now.getUTCFullYear()}-${toTwoDigitString(now.getUTCMonth()+1)}-${toTwoDigitString(now.getUTCDate())} ${toTwoDigitString(now.getUTCHours())}:${toTwoDigitString(now.getUTCMinutes())}:${toTwoDigitString(now.getUTCSeconds())}] ${message}`);
-};
-function toTwoDigitString(num) {
-	var str = num.toString();
-	if (str.length == 1) return "0" + str;
-	return str;
-};
-
-log(`Starting Minesweeper Bot version ${botVersion}`);
 
 /** ───── BECOME A DISCORD BOT ───── **/
 // This section is to load the modules, initialise the bot and create some general functions
 
 // Load everything
+const { log, saveGuildPrefixes, nextReport } = require("./util.js");
 const Discord = require("discord.js");
 const fs = require("fs");
 const path = require("path");
-const auth = require("./auth.json");
-const package = require("./package.json");
 const updates = require("./news.json").updates;
-var guildprefixes = require("./guildprefixes.json");
+const guildprefixes = require("./guildprefixes.json");
+const package = require("./package.json");
 
 log("All modules loaded");
-if (package.version != botVersion) {
-	log(`Inconsistency between package version (${package.version}) and code version (${botVersion})`);
-}
-
-// Censored bot token?
-if (!auth.bottoken || auth.bottoken == "CENSORED") {
-	log("Please fill in the token of your Discord Bot (can be found at https://discordapp.com/developers/applications).");
-	process.exit();
-}
 
 // Initialise Discord Bot
 const client = new Discord.Client();
@@ -54,31 +31,10 @@ else {
 	log("Starting bot without DBLAPI token.");
 }
 
-function getGuildCount() {
-	return client.guilds.cache.array().length;
-};
-
-// setup for hourly reports in the log
-var commandsThisHour = 0;
-var reconnectsThisHour = 0;
-function report() {
-	log(`Hourly report: ${commandsThisHour} commands, ${reconnectsThisHour} reconnects.`);
-	commandsThisHour = 0;
-	reconnectsThisHour = 0;
-	client.setTimeout(report, getTimeUntilNextHour());
-};
-// This function appears to work but time is weird and hard to test so if there is an oversight please tell me
-function getTimeUntilNextHour() {
-	let now = new Date();
-	return (59 - now.getMinutes())*60000 + (60 - now.getSeconds())*1000;
-};
-
-client.setTimeout(report, getTimeUntilNextHour());
-
 // Misc event handlers
 
 client.on("ready", () => {
-	log(`Ready! Current guild count: ${getGuildCount()}`);
+	log(`Ready! Guild count: ${client.guilds.cache.array().length}`);
 	client.user.setActivity("!minesweeper", {"type": "PLAYING"}).catch(log);
 });
 
@@ -89,7 +45,7 @@ client.on("disconnected", event => {
 
 client.on("reconnecting", () => {
 	//log("Reconnecting...");
-	reconnectsThisHour++;
+	nextReport.reconnets++;
 });
 
 /*
@@ -118,11 +74,13 @@ client.on("debug", info => {
 //*/
 
 client.on("guildCreate", guild => {
-	log(`Joined a new guild! It's called "${guild.name}" (Current count: ${getGuildCount()})`);
+	log(`Joined a new guild! It's called "${guild.name}".`);
+	nextReport.guilds++;
 });
 
 client.on("guildDelete", guild => {
-	log(`Left a guild :(. It was called "${guild.name}" (Current count: ${getGuildCount()})`);
+	log(`Left a guild :(. It was called "${guild.name}".)`);
+	nextReport.guilds--;
 });
 
 /** ───── MESSAGE PARSER ───── **/
@@ -218,7 +176,7 @@ function executeCommand(message, command) {
 			
 			// last input; run the command
 			if (thisInputEnd < 0 || command == "" || !currentArgument.child) {
-				commandsThisHour++;
+				nextReport.commands++;
 				if (!currentArgument.run) {
 					message.channel.send(`You're missing one or more required arguments: \`${currentArgument.getChildSyntax(true, true)}\`.`).catch(log);
 					return;
@@ -233,7 +191,7 @@ function executeCommand(message, command) {
 	}
 	catch (err) {
 		log(err);
-		commandsThisHour++;
+		nextReport.commands++;
 		message.channel.send("An unknown error occurred while evaluating your command.").catch(log);
 	}
 };
@@ -485,7 +443,7 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 	new CommandArgument("literal", "info", message => {
 		let prefix = getCommandsPrefix(message);
 		let minesweeperSyntax = commands.child.find(arg => arg.name == "minesweeper").getChildSyntax(true);
-		return `Hello, I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! To generate a new minesweeper game, use the \`${prefix}minesweeper\` command (or its alias \`${prefix}ms\`):\n\`\`\`\n${prefix}minesweeper ${minesweeperSyntax}\n\`\`\`\`gameWidth\` and \`gameHeight\` tell me how many squares the game should be wide and tall, for a maximum of 40x20. Default is 8x8.\n\`numMines\` is how many mines there should be in the game, the more mines the more difficult it is. If omitted, I will pick a number based on the size of the game.\nWhen you run this command, I will reply with a grid of spoiler tags. Unless you wrote \`dontStartUncovered\`, the first zeroes will have already been opened for you.\n\nIf you don't know how to play Minesweeper, get out of the rock you've been living under and use the \`${prefix}howtoplay\` command. For a list of all commands and their syntaxes, use \`${prefix}help\`.\n\nMy creator is @JochCool#1314 and I'm at version ${botVersion}. For those interested, my source code is available on GitHub: https://github.com/JochCool/minesweeper-bot. You can submit bug reports and feature requests there.\nThank you for using me!`),
+		return `Hello, I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! To generate a new minesweeper game, use the \`${prefix}minesweeper\` command (or its alias \`${prefix}ms\`):\n\`\`\`\n${prefix}minesweeper ${minesweeperSyntax}\n\`\`\`\`gameWidth\` and \`gameHeight\` tell me how many squares the game should be wide and tall, for a maximum of 40x20. Default is 8x8.\n\`numMines\` is how many mines there should be in the game, the more mines the more difficult it is. If omitted, I will pick a number based on the size of the game.\nWhen you run this command, I will reply with a grid of spoiler tags. Unless you wrote \`dontStartUncovered\`, the first zeroes will have already been opened for you.\n\nIf you don't know how to play Minesweeper, get out of the rock you've been living under and use the \`${prefix}howtoplay\` command. For a list of all commands and their syntaxes, use \`${prefix}help\`.\n\nMy creator is @JochCool#1314 and I'm at version ${package.version}. For those interested, my source code is available on GitHub: https://github.com/JochCool/minesweeper-bot. You can submit bug reports and feature requests there.\nThank you for using me!`),
 	new CommandArgument("literal", "howtoplay", () => `In Minesweeper, you get a rectangular grid of squares. In some of those squares, mines are hidden, but you don't know which squares. The objective is 'open' all the squares that don't have a hidden mine, but to not touch the ones that do.\n\nLet's start with an example. ${generateGame(5, 5, 3)}\nTo open a mine, click the spoiler tag. So go click one now. The contents of that square will be revealed when you do so. If it's a mine (:bomb:), you lose! If it's not a mine, you get a mysterious number instead, like :two:. This number is there to help you, as it indicates how many mines are in the eight squares that touch it (horizontally, vertically or diagonally). Using this information and some good logic, you can figure out the location of most of the mines!`),
 	new CommandArgument("literal", "news", () => {
 		let returnTxt = "These were my past three updates:\n";
@@ -505,9 +463,10 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 			if (inputs.prefix.length == 0) {
 				return "The prefix must be at least one character long.";
 			}
+			
 			let prevprefix = getCommandsPrefix(message.guild);
 			guildprefixes[message.guild.id] = inputs.prefix;
-			fs.writeFile(path.resolve(__dirname, "guildprefixes.json"), JSON.stringify(guildprefixes, null, 4), err => { if (err) { log(err); } });
+			saveGuildPrefixes();
 			return `The prefix of this server has been changed from \`${prevprefix}\` to \`${inputs.prefix}\`.`;
 		})
 	),
