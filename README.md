@@ -23,5 +23,5 @@ Here's the other commands I listen to:
 * `!ping` — displays my heartbeat ping.
 
 ## Other info
-My creator is @JochCool#1314. If you have any questions or other remarks, you can DM him. You can submit bug reports and feature requests on the GitHub page.
+My creator is @JochCool#1314. If you have any questions or other remarks, you can DM him, or join my Discord support server: https://discord.gg/PCxZrrZ. You can submit bug reports and feature requests on the GitHub page.
 Note: sometimes you might not get a response from me when you run a command. Then that's probably because I'm temporarily offline, in which case please DM JochCool so he can fix it.
