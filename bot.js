@@ -1,6 +1,6 @@
 const botVersion = "1.8";
 
-// What you're probably looking for is the generateGame function, which is all the way at the bottom of the code (currently line 526).
+// What you're probably looking for is the generateGame function, which is all the way at the bottom of the code (currently line 530).
 
 // Replacement of console.log
 function log(message) {
