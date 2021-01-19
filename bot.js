@@ -512,7 +512,7 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 			return `The prefix of this server has been changed from \`${prevprefix}\` to \`${inputs.prefix}\`.`;
 		})
 	),
-	new CommandArgument("literal", "ping", () => `pong (${Math.floor(client.ping)}ms heartbeat)`)
+	new CommandArgument("literal", "ping", () => `pong (${Math.floor(client.ws.ping)}ms heartbeat)`)
 ]);
 
 // cheating here because aliases haven't been implemented yet
@@ -628,7 +628,7 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw, startsNot
 				}
 			}
 		}
-
+		
 		// Uncover a random region
 		if (zeroLocations.length > 0) {
 			
@@ -637,7 +637,7 @@ function generateGame(gameWidth, gameHeight, numMines, message, isRaw, startsNot
 			let firstCoord = zeroLocations[Math.floor(Math.random()*zeroLocations.length)];
 			uncoveredLocations[firstCoord.y][firstCoord.x] = true;
 			locationsToUncover.push(firstCoord);
-
+			
 			// Uncover neighbouring tiles
 			while (locationsToUncover.length > 0) {
 				for (var j = 0; j < neighbourLocations.length; j++) {
