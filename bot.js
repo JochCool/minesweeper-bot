@@ -1,4 +1,4 @@
-const botVersion = "1.8";
+const botVersion = "1.8.1";
 
 // What you're probably looking for is the generateGame function, which is all the way at the bottom of the code (currently line 530).
 
@@ -42,7 +42,7 @@ if (!auth.bottoken || auth.bottoken == "CENSORED") {
 }
 
 // Initialise Discord Bot
-const client = new Discord.Client();
+const client = new Discord.Client(require("./clientoptions.json"));
 client.login(auth.bottoken).catch(log);
 
 // Initalise connetion with DBLAPI (the API for top.gg / discordbots.org)
@@ -76,10 +76,10 @@ function getTimeUntilNextHour() {
 client.setTimeout(report, getTimeUntilNextHour());
 
 // Misc event handlers
+// IMPORTANT: WHEN ADDING EVENTS, DO NOT FORGET TO ALSO CHECK THE GATEWAY INTENTS IN clientoptions.json
 
 client.on("ready", () => {
 	log(`Ready! Current guild count: ${getGuildCount()}`);
-	client.user.setActivity("!minesweeper", {"type": "PLAYING"}).catch(log);
 });
 
 client.on("disconnected", event => {
@@ -126,7 +126,7 @@ client.on("guildDelete", guild => {
 });
 
 /** ───── MESSAGE PARSER ───── **/
-// This section is to evaluate you commands and reply to your messages
+// This section is to evaluate your commands and reply to your messages
 
 const defaultprefix = '!';
 
