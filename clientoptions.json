@@ -1,0 +1,21 @@
+{
+	"presence" : {
+		"activity": {
+			"type": "PLAYING",
+			"name": "!minesweeper"
+		}
+	},
+	
+	"messageCacheMaxSize": 50,
+	"messageCacheLifetime": 30,
+	"messageSweepInterval": 3600,
+	"messageEditHistoryMaxSize": 0,
+	
+	"ws": {
+		"intents": [
+			"GUILDS",
+			"GUILD_MESSAGES",
+			"DIRECT_MESSAGES"
+		]
+	}
+}
