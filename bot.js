@@ -45,7 +45,7 @@ if (!auth.bottoken || auth.bottoken == "CENSORED") {
 const client = new Discord.Client(require("./clientoptions.json"));
 client.login(auth.bottoken).catch(log);
 
-// Initalise connetion with DBLAPI (the API for top.gg / discordbots.org)
+// Initalise connection with DBLAPI (the API for top.gg / discordbots.org)
 if (auth.dbltoken && auth.dbltoken != "CENSORED") {
 	const DBLAPI = require("dblapi.js");
 	new DBLAPI(auth.dbltoken, client).on("error", log);
@@ -506,7 +506,12 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 			if (inputs.prefix.length == 0) {
 				return "The prefix must be at least one character long.";
 			}
+
 			let prevprefix = getCommandsPrefix(message.guild);
+			if (prevprefix == inputs.prefix) {
+				return "The prefix didn't change.";
+			}
+
 			guildprefixes[message.guild.id] = inputs.prefix;
 			fs.writeFile(path.resolve(__dirname, "guildprefixes.json"), JSON.stringify(guildprefixes, null, 4), err => { if (err) { log(err); } });
 			return `The prefix of this server has been changed from \`${prevprefix}\` to \`${inputs.prefix}\`.`;
