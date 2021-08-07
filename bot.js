@@ -65,7 +65,7 @@ function report() {
 	log(`Hourly report: ${commandsThisHour} commands, ${reconnectsThisHour} reconnects.`);
 	commandsThisHour = 0;
 	reconnectsThisHour = 0;
-	client.setTimeout(report, getTimeUntilNextHour());
+	setTimeout(report, getTimeUntilNextHour());
 };
 // This function appears to work but time is weird and hard to test so if there is an oversight please tell me
 function getTimeUntilNextHour() {
@@ -73,7 +73,7 @@ function getTimeUntilNextHour() {
 	return (59 - now.getMinutes())*60000 + (60 - now.getSeconds())*1000;
 };
 
-client.setTimeout(report, getTimeUntilNextHour());
+setTimeout(report, getTimeUntilNextHour());
 
 // Misc event handlers
 // IMPORTANT: WHEN ADDING EVENTS, DO NOT FORGET TO ALSO CHECK THE GATEWAY INTENTS IN clientoptions.json
