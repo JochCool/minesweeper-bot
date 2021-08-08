@@ -42,7 +42,26 @@ if (!auth.bottoken || auth.bottoken == "CENSORED") {
 }
 
 // Initialise Discord Bot
-const client = new Discord.Client(require("./clientoptions.json"));
+const client = new Discord.Client({
+	intents: [
+		"GUILDS",
+		"GUILD_MESSAGES",
+		"DIRECT_MESSAGES"
+	],
+
+	presence: {
+		activity: {
+			type: "PLAYING",
+			name: "!minesweeper"
+		}
+	},
+
+	makeCache: Discord.Options.cacheWithLimits({
+		MessageManager: 0,
+		PresenceManager: 0
+	})
+});
+
 client.login(auth.bottoken).catch(log);
 
 // Initalise connection with DBLAPI (the API for top.gg / discordbots.org)
@@ -76,7 +95,7 @@ function getTimeUntilNextHour() {
 setTimeout(report, getTimeUntilNextHour());
 
 // Misc event handlers
-// IMPORTANT: WHEN ADDING EVENTS, DO NOT FORGET TO ALSO CHECK THE GATEWAY INTENTS IN clientoptions.json
+// IMPORTANT: WHEN ADDING EVENTS, DO NOT FORGET TO ALSO CHECK THE GATEWAY INTENTS IN THE CLIENT CONSTRUCTOR
 
 client.on("ready", () => {
 	log(`Ready! Current guild count: ${getGuildCount()}`);
