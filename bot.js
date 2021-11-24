@@ -1,6 +1,5 @@
-const botVersion = "1.9";
-
-// What you're probably looking for is the generateGame function, which is all the way at the bottom of the code (currently line 553).
+// Welcome to the Minesweeper Bot source code!
+// What you're probably looking for is the generateGame function, which is all the way at the bottom of the code (currently line 550).
 
 // Replacement of console.log
 function log(message) {
@@ -16,7 +15,9 @@ function toTwoDigitString(num) {
 	return str;
 };
 
-log(`Starting Minesweeper Bot version ${botVersion}`);
+const package = require("./package.json");
+
+log(`Starting Minesweeper Bot version ${package.version}`);
 
 /** ───── BECOME A DISCORD BOT ───── **/
 // This section is to load the modules, initialise the bot and create some general functions
@@ -26,14 +27,10 @@ const Discord = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 const auth = require("./auth.json");
-const package = require("./package.json");
 const updates = require("./news.json").updates;
 var guildprefixes = require("./guildprefixes.json");
 
 log("All modules loaded");
-if (package.version != botVersion) {
-	log(`Inconsistency between package version (${package.version}) and code version (${botVersion})`);
-}
 
 // Censored bot token?
 if (!auth.bottoken || auth.bottoken == "CENSORED") {
@@ -503,7 +500,7 @@ const commands = new CommandArgument("root", defaultprefix, null, [
 	new CommandArgument("literal", "info", message => {
 		let prefix = getCommandsPrefix(message);
 		let minesweeperSyntax = commands.child.find(arg => arg.name == "minesweeper").getChildSyntax(true);
-		return `Hello, I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! To generate a new minesweeper game, use the \`${prefix}minesweeper\` command (or its alias \`${prefix}ms\`):\n\`\`\`\n${prefix}minesweeper ${minesweeperSyntax}\n\`\`\`\`gameWidth\` and \`gameHeight\` tell me how many squares the game should be wide and tall, for a maximum of 40x20. Default is 8x8.\n\`numMines\` is how many mines there should be in the game, the more mines the more difficult it is. If omitted, I will pick a number based on the size of the game.\nWhen you run this command, I will reply with a grid of spoiler tags. Unless you wrote \`dontStartUncovered\`, the first zeroes will have already been opened for you.\n\nIf you don't know how to play Minesweeper, get out of the rock you've been living under and use the \`${prefix}howtoplay\` command. For a list of all commands and their syntaxes, use \`${prefix}help\`.\n\nMy creator is @JochCool#1314 and I'm at version ${botVersion}. For those interested, my source code is available on GitHub: https://github.com/JochCool/minesweeper-bot. You can submit bug reports and feature requests there.\nThank you for using me!`;
+		return `Hello, I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! To generate a new minesweeper game, use the \`${prefix}minesweeper\` command (or its alias \`${prefix}ms\`):\n\`\`\`\n${prefix}minesweeper ${minesweeperSyntax}\n\`\`\`\`gameWidth\` and \`gameHeight\` tell me how many squares the game should be wide and tall, for a maximum of 40x20. Default is 8x8.\n\`numMines\` is how many mines there should be in the game, the more mines the more difficult it is. If omitted, I will pick a number based on the size of the game.\nWhen you run this command, I will reply with a grid of spoiler tags. Unless you wrote \`dontStartUncovered\`, the first zeroes will have already been opened for you.\n\nIf you don't know how to play Minesweeper, get out of the rock you've been living under and use the \`${prefix}howtoplay\` command. For a list of all commands and their syntaxes, use \`${prefix}help\`.\n\nMy creator is @JochCool#1314 and I'm at version ${package.version}. For those interested, my source code is available on GitHub: ${package.repository}. You can submit bug reports and feature requests there.\nThank you for using me!`;
 	}),
 	new CommandArgument("literal", "howtoplay", () => `In Minesweeper, you get a rectangular grid of squares. In some of those squares, mines are hidden, but you don't know which squares. The objective is 'open' all the squares that don't have a hidden mine, but to not touch the ones that do.\n\nLet's start with an example. ${generateGame(5, 5, 3)}\nTo open a mine, click the spoiler tag. So go click one now. The contents of that square will be revealed when you do so. If it's a mine (:bomb:), you lose! If it's not a mine, you get a mysterious number instead, like :two:. This number is there to help you, as it indicates how many mines are in the eight squares that touch it (horizontally, vertically or diagonally). Using this information and some good logic, you can figure out the location of most of the mines!`),
 	new CommandArgument("literal", "news", () => {
