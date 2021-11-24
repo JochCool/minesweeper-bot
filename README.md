@@ -31,7 +31,7 @@ If you want to try this code out or run it on a private bot, that is allowed, as
 
 1. If you haven't done so already, go to https://discord.com/developers/applications and create a new application and turn it into a bot. Go to the "Bot" page and copy the token. You'll need it later.
 2. Clone the repository from GitHub. (Click the green button in the top right corner of the repo that says "code", and click "Download ZIP". Alternatively, if you have Git installed, you can use `git clone https://github.com/JochCool/minesweeper-bot.git`.)
-3. Open the file "auth.json" and on the second line of that file (where it says `"bottoken": "CENSORED"`), replace the word "CENSORED" with the token you copied at step 1. You can ignore the "dbltoken".
+3. Open the file "auth.json" and on the second line of that file (where it says `"bottoken": "CENSORED"`), replace the word "CENSORED" with the token you copied at step 1. You can ignore the `"topggtoken"`.
 4. Download and install [NodeJS](https://nodejs.org).
 5. Open the command line and navigate to the folder in which you unzipped the repo at step 2 (using the `cd` command). Then type `npm install discord.js`.
 6. Run `node bot.js`. Have fun!

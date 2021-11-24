@@ -1,6 +1,6 @@
-const botVersion = "1.8.1";
+const botVersion = "1.9";
 
-// What you're probably looking for is the generateGame function, which is all the way at the bottom of the code (currently line 530).
+// What you're probably looking for is the generateGame function, which is all the way at the bottom of the code (currently line 553).
 
 // Replacement of console.log
 function log(message) {
@@ -64,13 +64,12 @@ const client = new Discord.Client({
 
 client.login(auth.bottoken).catch(log);
 
-// Initalise connection with DBLAPI (the API for top.gg / discordbots.org)
-if (auth.dbltoken && auth.dbltoken != "CENSORED") {
-	const DBLAPI = require("dblapi.js");
-	new DBLAPI(auth.dbltoken, client).on("error", log);
+// Initalise connetion with the Top.gg API
+if (auth.dbltoken && auth.topggtoken != "CENSORED") {
+	require("topgg-autoposter").AutoPoster(auth.topggtoken, client).on("error", log);
 }
 else {
-	log("Starting bot without DBLAPI token.");
+	log("Starting bot without Top.gg connection.");
 }
 
 function getGuildCount() {
