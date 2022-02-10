@@ -1,6 +1,5 @@
-const fs = require("fs");
-const path = require("path");
 const generateGame = require("./generateGame.js");
+const guildprefixes = require("./guildprefixes.js");
 const updates = require("./news.json").updates;
 
 /*
@@ -223,9 +222,10 @@ class CommandArgument {
 // Contains info about all the commands
 const commands = new CommandArgument("root", null, null, [
 	new CommandArgument("literal", "help", message => {
+        let prefix = guildprefixes.getPrefix(message.guild);
 		let returnTxt = "";
 		for (var i = 0; i < commands.child.length; i++) {
-			returnTxt += `\n• \`${getCommandsPrefix(message)}${commands.child[i].name} ${commands.child[i].getChildSyntax(true)}\``;
+			returnTxt += `\n• \`${prefix}${commands.child[i].name} ${commands.child[i].getChildSyntax(true)}\``;
 		}
 		if (returnTxt == "") {
 			return "You cannot execute any commands!";
@@ -253,7 +253,7 @@ const commands = new CommandArgument("root", null, null, [
 	),
 	new CommandArgument("literal", "ms", null),
 	new CommandArgument("literal", "info", message => {
-		let prefix = getCommandsPrefix(message);
+        let prefix = guildprefixes.getPrefix(message.guild);
 		let minesweeperSyntax = commands.child.find(arg => arg.name == "minesweeper").getChildSyntax(true);
 		return `Hello, I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! To generate a new minesweeper game, use the \`${prefix}minesweeper\` command (or its alias \`${prefix}ms\`):\n\`\`\`\n${prefix}minesweeper ${minesweeperSyntax}\n\`\`\`\`gameWidth\` and \`gameHeight\` tell me how many squares the game should be wide and tall, for a maximum of 40x20. Default is 8x8.\n\`numMines\` is how many mines there should be in the game, the more mines the more difficult it is. If omitted, I will pick a number based on the size of the game.\nWhen you run this command, I will reply with a grid of spoiler tags. Unless you wrote \`dontStartUncovered\`, the first zeroes will have already been opened for you.\n\nIf you don't know how to play Minesweeper, get out of the rock you've been living under and use the \`${prefix}howtoplay\` command. For a list of all commands and their syntaxes, use \`${prefix}help\`.\n\nMy creator is @JochCool#1314 and I'm at version ${package.version}. For those interested, my source code is available on GitHub: ${package.repository}. You can submit bug reports and feature requests there.\nThank you for using me!`;
 	}),
@@ -277,13 +277,12 @@ const commands = new CommandArgument("root", null, null, [
 				return "The prefix must be at least one character long.";
 			}
 
-			let prevprefix = getCommandsPrefix(message.guild);
+            let prevprefix = guildprefixes.getPrefix(message.guild);
 			if (prevprefix == inputs.prefix) {
 				return "The prefix didn't change.";
 			}
 
-			guildprefixes[message.guild.id] = inputs.prefix;
-			fs.writeFile(path.resolve(__dirname, "guildprefixes.json"), JSON.stringify(guildprefixes, null, 4), err => { if (err) { log(err); } });
+			guildprefixes.setPrefix(message.guild, inputs.prefix);
 			return `The prefix of this server has been changed from \`${prevprefix}\` to \`${inputs.prefix}\`.`;
 		})
 	),

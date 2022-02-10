@@ -27,7 +27,7 @@ log(`Starting Minesweeper Bot version ${package.version}`);
 const Discord = require("discord.js");
 const auth = require("./auth.json");
 const commands = require("./commands.js");
-var guildprefixes = require("./guildprefixes.json");
+const guildprefixes = require("./guildprefixes.js");
 
 log("All modules loaded");
 
@@ -142,28 +142,6 @@ client.on("guildDelete", guild => {
 /** ───── MESSAGE PARSER ───── **/
 // This section is to evaluate your commands and reply to your messages
 
-const defaultprefix = '!';
-
-// Returns the prefix in this guild (if DM, returns default prefix)
-function getCommandsPrefix(guildOrMessage) {
-	let id = guildOrMessage.id;
-	if (guildOrMessage instanceof Discord.Message) {
-		if (guildOrMessage.guild) {
-			id = guildOrMessage.guild.id;
-		}
-		else {
-			// Default prefix for DM channels
-			return defaultprefix;
-		}
-	}
-	
-	// Has it been stored?
-	if (typeof guildprefixes[id] == "string") {
-		return guildprefixes[id];
-	}
-	return defaultprefix;
-};
-
 client.on('messageCreate', message => {
 	
 	// Don't parse if
@@ -172,7 +150,7 @@ client.on('messageCreate', message => {
 	}
 	
 	// Commands
-	let prefix = getCommandsPrefix(message);
+	let prefix = guildprefixes.getPrefix(message.guild);
 	if (message.content.startsWith(prefix) && (!message.guild || message.channel.memberPermissions(message.guild.me).has("SEND_MESSAGES"))) {
 		executeCommand(message, message.content.substring(prefix.length));
 	}
