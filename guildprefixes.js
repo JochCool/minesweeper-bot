@@ -20,16 +20,17 @@ class PrefixManager {
 			return this.defaultprefix;
 		}
 
-		let id = guild.id;
-		if (typeof this.prefixes[id] == "string") {
-			return this.prefixes[id];
+		let result = this.prefixes[guild.id];
+		if (typeof result == "string") {
+			return result;
 		}
 		return this.defaultprefix;
 	};
 
 	setPrefix(guild, prefix) {
-		this.prefixes[guild.id] = prefix;
-		fs.writeFile(path.resolve(__dirname, "guildprefixes.json"), JSON.stringify(guildprefixes, null, 4), err => { if (err) { log(err); } });
+		let prefixes = this.prefixes;
+		prefixes[guild.id] = prefix;
+		fs.writeFile(path.resolve(__dirname, "guildprefixes.json"), JSON.stringify(prefixes, null, 4), err => { if (err) { log(err); } });
 	}
 }
 

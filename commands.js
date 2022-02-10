@@ -306,7 +306,7 @@ const commands = new CommandArgument("root", null, null, [
 			if (!message.guild) {
 				return "The prefix can only be changed in a server, not here.";
 			}
-			if (!message.member.hasPermission("MANAGE_GUILD")) {
+			if (!message.member.permissions.has("MANAGE_GUILD")) {
 				return "You need the Manage Server permission to change the prefix.";
 			}
 			if (inputs.prefix.length == 0) {
