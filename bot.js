@@ -70,7 +70,7 @@ else {
 }
 
 function getGuildCount() {
-	return client.guilds.cache.array().length;
+	return client.guilds.cache.size;
 };
 
 // setup for hourly reports in the log
@@ -165,7 +165,7 @@ function getCommandsPrefix(guildOrMessage) {
 	return defaultprefix;
 };
 
-client.on('message', message => {
+client.on('messageCreate', message => {
 	
 	// Don't parse if
 	if (message.guild && !message.guild.available || message.author.bot) {
