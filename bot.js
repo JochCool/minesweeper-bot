@@ -156,18 +156,17 @@ client.on('messageCreate', message => {
 	}
 });
 
-var input = null, thisInputEnd = -1;
-
 function executeCommand(message, command) {
 	try {
 		//log("Executing command: "+command);
-		
-		// init
-		let currentArgument = commands;
-		let inputs = {};
+
 		command = command.trim();
 		
-		// loop through arguments to run the command
+		// Will contain the parameters the user gave and will be passed to the command-specific run function.
+		let inputs = {};
+		
+		// Go down the arguments tree to run the command
+		let currentArgument = commands;
 		while (currentArgument.child) {
 			
 			// In case we'll need to remind you of the syntax
@@ -176,40 +175,40 @@ function executeCommand(message, command) {
 			
 			currentArgument = currentArgument.child;
 			
-			// input type check
-			input = null;
-			thisInputEnd = -1;
-			let inputAllowed = false;
+			// Check input
+			let checkResult;
 			if (Array.isArray(currentArgument)) {
+				// Find an argument that accepts the input
 				for (var a = 0; a < currentArgument.length; a++) {
-					if (currentArgument[a].isInputAllowed(command)) {
+					checkResult = currentArgument[a].checkInput(command);
+					if (!checkResult.error) {
+						notFound = false;
 						currentArgument = currentArgument[a];
-						inputAllowed = true;
 						break;
 					}
 				}
 			}
 			else {
-				inputAllowed = currentArgument.isInputAllowed(command);
+				checkResult = currentArgument.checkInput(command);
 			}
 			
-			if (!inputAllowed) {
-				if (currentArgument != commands.child) {
-					message.channel.send(`Invalid argument: "\`${input}\`". Expected ${syntax}.`).catch(log);
+			if (checkResult.error) {
+				if (currentArgument != commands.child) { // don't give error message for root command
+					message.channel.send(`${checkResult.error}: \`${checkResult.input}\`. Expected ${syntax}.`).catch(log);
 				}
 				return;
 			}
 			
 			// add input to inputs list
-			inputs[currentArgument.name] = input;
+			inputs[currentArgument.name] = checkResult.input;
 			
 			// Next command
-			if (thisInputEnd >= 0) {
-				command = command.substring(thisInputEnd).trim();
+			if (checkResult.inputEnd >= 0) {
+				command = command.substring(checkResult.inputEnd).trim();
 			}
 			
 			// last input; run the command
-			if (thisInputEnd < 0 || command == "" || !currentArgument.child) {
+			if (checkResult.inputEnd < 0 || command == "" || !currentArgument.child) {
 				commandsThisHour++;
 				if (!currentArgument.run) {
 					message.channel.send(`You're missing one or more required arguments: \`${currentArgument.getChildSyntax(true, true)}\`.`).catch(log);

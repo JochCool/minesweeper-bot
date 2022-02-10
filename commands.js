@@ -41,80 +41,116 @@ class CommandArgument {
     }
 
     // Returns whether or not the first input in the command string is a valid input for this argument
-    isInputAllowed(command) {
-        if (command == "") {
-            return false;
+    // Checks if the first input in the command string is a valid input for this argument. If so, returns the parsed input and where in the string it ends. If not, returns null.
+    checkInput(input) {
+        if (input == "") {
+            return {
+                input: "",
+                error: "Missing argument"
+            };
         }
-        input = command;
 
         // Literals
         if (this.type == "literal") {
             if (input.startsWith(this.name)) {
-                input = this.name;
-                thisInputEnd = this.name.length;
-                return true;
+                return {
+                    input: this.name,
+                    inputEnd: this.name.length
+                };
             }
-            return false;
+            return {
+                input: input,
+                error: "Invalid option"
+            };
         }
+        
+        let inputEnd;
 
         // Quotes
         if (input.startsWith('"')) {
-            thisInputEnd = input.slice(1).indexOf('"') + 2;
-            if (thisInputEnd == 1) {
-                input = input.slice(1);
-                return false;
+            inputEnd = input.slice(1).indexOf('"') + 2;
+            if (inputEnd < 0) {
+                return {
+                    input: input,
+                    error: "Unmatched quote"
+                };
             }
-            input = input.slice(1, thisInputEnd - 1);
+            input = input.slice(1, inputEnd - 1);
         }
-
 
         // Spaces / new lines
         else if (this.child) {
             // Find the first space or new line
-            let nextSpace = command.indexOf(' '), nextNewLine = command.indexOf('\n');
-            if (nextSpace == -1) {
-                thisInputEnd = nextNewLine;
+            let nextSpace = input.indexOf(' '), nextNewLine = input.indexOf('\n');
+            if (nextSpace < 0) {
+                inputEnd = nextNewLine;
             }
             else if (nextNewLine >= 0) {
-                thisInputEnd = Math.min(nextSpace, nextNewLine);
+                inputEnd = Math.min(nextSpace, nextNewLine);
             }
             else {
-                thisInputEnd = nextSpace;
+                inputEnd = nextSpace;
             }
 
-            if (thisInputEnd >= 0) {
-                input = command.substring(0, thisInputEnd);
+            if (inputEnd >= 0) {
+                input = input.substring(0, inputEnd);
             }
+        }
+        else {
+            inputEnd = -1;
         }
 
         // Convert inputs
         // Note: most of these aren't used by this bot; I've just copied this code from my other bot.
         if (this.type == "boolean") {
             if (input.startsWith("true")) {
-                input = true;
-                thisInputEnd = 4;
-                return true;
+                return {
+                    input: true,
+                    inputEnd: inputEnd < 0 ? 4 : inputEnd
+                };
             }
             if (input.startsWith("false")) {
-                input = false;
-                thisInputEnd = 5;
-                return true;
+                return {
+                    input: false,
+                    inputEnd: inputEnd < 0 ? 5 : inputEnd
+                };
             }
-            return false;
+            return {
+                input: input,
+                error: "Must be true or false"
+            };
         }
         if (this.type == "number" || this.type == "integer") {
             let num = Number(input);
             if (isNaN(num)) {
-                return false;
+                return {
+                    input: input,
+                    error: "Not a valid number"
+                };
             }
-            input = Number(input);
-            if (this.type == "integer" && input % 1 != 0) {
-                return false;
+            if (this.type == "integer" && num % 1 != 0) {
+                return {
+                    input: input,
+                    error: "Not an integer"
+                };
             }
-            return true;
+            return {
+                input: num,
+                inputEnd: inputEnd
+            };
         }
 
-        return this.type == "text";
+        if (this.type == "text") {
+            return {
+                input: input,
+                inputEnd: inputEnd
+            };
+        }
+        
+        return {
+            input: input,
+            error: "Invalid input"
+        };
     }
 
     // Returns the syntax of this argument's child, properly formatted. (If requiredOnly is true, will never return things in square brackets)
