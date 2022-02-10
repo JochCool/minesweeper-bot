@@ -28,190 +28,196 @@ The arguments that get passed into this function are:
 - Client, the Discord client that received the message.
 */
 
-function CommandArgument(type, name, runFunction, child) {
-	this.type = type;
-	this.name = name;
-	this.run = runFunction;
-	this.child = child;
-};
+class CommandArgument {
 
-CommandArgument.prototype.hasChildren = function() {
-	return this.child instanceof CommandArgument || Array.isArray(this.child) && this.child.length > 0;
-};
+    constructor(type, name, runFunction, child) {
+        this.type = type;
+        this.name = name;
+        this.run = runFunction;
+        this.child = child;
+    }
 
-// Returns whether or not the first input in the command string is a valid input for this argument
-CommandArgument.prototype.isInputAllowed = function(command) {
-	if (command == "") {
-		return false;
-	}
-	input = command;
-	
-	// Literals
-	if (this.type == "literal") {
-		if (input.startsWith(this.name)) {
-			input = this.name;
-			thisInputEnd = this.name.length;
-			return true;
-		}
-		return false;
-	}
-	
-	// Quotes
-	if (input.startsWith('"')) {
-		thisInputEnd = input.slice(1).indexOf('"')+2;
-		if (thisInputEnd == 1) {
-			input = input.slice(1);
-			return false;
-		}
-		input = input.slice(1, thisInputEnd-1);
-	}
-	
-	// Spaces / new lines
-	else if (this.child) {
-		// Find the first space or new line
-		let nextSpace = command.indexOf(' '), nextNewLine = command.indexOf('\n');
-		if (nextSpace == -1) {
-			thisInputEnd = nextNewLine;
-		}
-		else if (nextNewLine >= 0) {
-			thisInputEnd = Math.min(nextSpace, nextNewLine);
-		}
-		else {
-			thisInputEnd = nextSpace;
-		}
-		
-		if (thisInputEnd >= 0) {
-			input = command.substring(0, thisInputEnd);
-		}
-	}
-	
-	// Convert inputs
-	// Note: most of these aren't used by this bot; I've just copied this code from my other bot.
-	if (this.type == "boolean") {
-		if (input.startsWith("true")) {
-			input = true;
-			thisInputEnd = 4;
-			return true;
-		}
-		if (input.startsWith("false")) {
-			input = false;
-			thisInputEnd = 5;
-			return true;
-		}
-		return false;
-	}
-	if (this.type == "number" || this.type == "integer") {
-		let num = Number(input);
-		if (isNaN(num)) {
-			return false;
-		}
-		input = Number(input);
-		if (this.type == "integer" && input % 1 != 0) {
-			return false;
-		}
-		return true;
-	}
-	
-	return this.type == "text";
-};
+    hasChildren() {
+        return this.child instanceof CommandArgument || Array.isArray(this.child) && this.child.length > 0;
+    }
 
-// Returns the syntax of this argument's child, properly formatted. (If requiredOnly is true, will never return things in square brackets)
-CommandArgument.prototype.getChildSyntax = function(withChildren, requiredOnly) {
-	if (!this.hasChildren()) {
-		return "";
-	}
-	let syntax = "";
-	let childrenHaveChildren = false;
-	
-	// Multiple children: loop through them
-	if (Array.isArray(this.child)) {
-		syntax += "(";
-		for (var i = 0; i < this.child.length; i++) {
-			if (i > 0) {
-				syntax += "|";
-			}
-			if (this.child[i].type == "literal") {
-				syntax += this.child[i].name;
-			}
-			else {
-				syntax += `<${this.child[i].name}>`;
-			}
-			if (this.child[i].child) {
-				childrenHaveChildren = true;
-			}
-		}
-		syntax += ")";
-	}
-	
-	// Single child
-	else {
-		if (this.child.type == "literal") {
-			syntax += this.child.name;
-		}
-		else {
-			syntax += `<${this.child.name}>`;
-		}
-	}
-	
-	// Add children's syntax if desired
-	if (withChildren) {
-		if (Array.isArray(this.child)) {
-			if (childrenHaveChildren) {
-				syntax += " ...";
-			}
-		}
-		else if (this.child.hasChildren() && (!requiredOnly && this.child.run)) {
-			syntax += " " + this.child.getChildSyntax(true, requiredOnly);
-		}
-	}
-	
-	// Optional children
-	if (!requiredOnly && this.run) {
-		syntax = `[${syntax}]`;
-	}
-	
-	return syntax;
-};
+    // Returns whether or not the first input in the command string is a valid input for this argument
+    isInputAllowed(command) {
+        if (command == "") {
+            return false;
+        }
+        input = command;
 
-// Returns an array of all possible child syntaxes (including the children of the children)
-CommandArgument.prototype.getAllChildSyntaxes = function() {
-	if (!this.hasChildren()) {
-		return [""];
-	}
-	let syntaxes = [];
-	
-	// Loop through all children
-	if (Array.isArray(this.child)) {
-		for (var i = 0; i < this.child.length; i++) {
-			let thesesyntaxes = this.child[i].getAllChildSyntaxes();
-			let childName = this.child[i].name;
-			if (this.child[i].type != "literal") {
-				childName = `<${childName}>`;
-			}
-			if (this.run) {
-				childName = `[${childName}]`;
-			}
-			for (var s = 0; s < thesesyntaxes.length; s++) {
-				syntaxes.push(`${childName} ${thesesyntaxes[s]}`);
-			}
-		}
-	}
-	
-	// Just the one child
-	else {
-		syntaxes = this.child.getAllChildSyntaxes();
-		let childName = this.child.name;
-		if (this.child.type != "literal") {
-			childName = `<${childName}>`;
-		}
-		if (this.run) {
-			childName = `[${childName}]`;
-		}
-		for (var s = 0; s < syntaxes.length; s++) {
-			syntaxes[s] = `${childName} ${syntaxes[s]}`;
-		}
-	}
-	return syntaxes;
+        // Literals
+        if (this.type == "literal") {
+            if (input.startsWith(this.name)) {
+                input = this.name;
+                thisInputEnd = this.name.length;
+                return true;
+            }
+            return false;
+        }
+
+        // Quotes
+        if (input.startsWith('"')) {
+            thisInputEnd = input.slice(1).indexOf('"') + 2;
+            if (thisInputEnd == 1) {
+                input = input.slice(1);
+                return false;
+            }
+            input = input.slice(1, thisInputEnd - 1);
+        }
+
+
+        // Spaces / new lines
+        else if (this.child) {
+            // Find the first space or new line
+            let nextSpace = command.indexOf(' '), nextNewLine = command.indexOf('\n');
+            if (nextSpace == -1) {
+                thisInputEnd = nextNewLine;
+            }
+            else if (nextNewLine >= 0) {
+                thisInputEnd = Math.min(nextSpace, nextNewLine);
+            }
+            else {
+                thisInputEnd = nextSpace;
+            }
+
+            if (thisInputEnd >= 0) {
+                input = command.substring(0, thisInputEnd);
+            }
+        }
+
+        // Convert inputs
+        // Note: most of these aren't used by this bot; I've just copied this code from my other bot.
+        if (this.type == "boolean") {
+            if (input.startsWith("true")) {
+                input = true;
+                thisInputEnd = 4;
+                return true;
+            }
+            if (input.startsWith("false")) {
+                input = false;
+                thisInputEnd = 5;
+                return true;
+            }
+            return false;
+        }
+        if (this.type == "number" || this.type == "integer") {
+            let num = Number(input);
+            if (isNaN(num)) {
+                return false;
+            }
+            input = Number(input);
+            if (this.type == "integer" && input % 1 != 0) {
+                return false;
+            }
+            return true;
+        }
+
+        return this.type == "text";
+    }
+
+    // Returns the syntax of this argument's child, properly formatted. (If requiredOnly is true, will never return things in square brackets)
+    getChildSyntax(withChildren, requiredOnly) {
+        if (!this.hasChildren()) {
+            return "";
+        }
+        let syntax = "";
+        let childrenHaveChildren = false;
+
+        // Multiple children: loop through them
+        if (Array.isArray(this.child)) {
+            syntax += "(";
+            for (var i = 0; i < this.child.length; i++) {
+                if (i > 0) {
+                    syntax += "|";
+                }
+                if (this.child[i].type == "literal") {
+                    syntax += this.child[i].name;
+                }
+                else {
+                    syntax += `<${this.child[i].name}>`;
+                }
+                if (this.child[i].child) {
+                    childrenHaveChildren = true;
+                }
+            }
+            syntax += ")";
+        }
+
+
+        // Single child
+        else {
+            if (this.child.type == "literal") {
+                syntax += this.child.name;
+            }
+            else {
+                syntax += `<${this.child.name}>`;
+            }
+        }
+
+        // Add children's syntax if desired
+        if (withChildren) {
+            if (Array.isArray(this.child)) {
+                if (childrenHaveChildren) {
+                    syntax += " ...";
+                }
+            }
+            else if (this.child.hasChildren() && (!requiredOnly && this.child.run)) {
+                syntax += " " + this.child.getChildSyntax(true, requiredOnly);
+            }
+        }
+
+        // Optional children
+        if (!requiredOnly && this.run) {
+            syntax = `[${syntax}]`;
+        }
+
+        return syntax;
+    }
+
+    // Returns an array of all possible child syntaxes (including the children of the children)
+    getAllChildSyntaxes() {
+        if (!this.hasChildren()) {
+            return [""];
+        }
+        let syntaxes = [];
+
+        // Loop through all children
+        if (Array.isArray(this.child)) {
+            for (var i = 0; i < this.child.length; i++) {
+                let thesesyntaxes = this.child[i].getAllChildSyntaxes();
+                let childName = this.child[i].name;
+                if (this.child[i].type != "literal") {
+                    childName = `<${childName}>`;
+                }
+                if (this.run) {
+                    childName = `[${childName}]`;
+                }
+                for (var s = 0; s < thesesyntaxes.length; s++) {
+                    syntaxes.push(`${childName} ${thesesyntaxes[s]}`);
+                }
+            }
+        }
+
+
+        // Just the one child
+        else {
+            syntaxes = this.child.getAllChildSyntaxes();
+            let childName = this.child.name;
+            if (this.child.type != "literal") {
+                childName = `<${childName}>`;
+            }
+            if (this.run) {
+                childName = `[${childName}]`;
+            }
+            for (var s = 0; s < syntaxes.length; s++) {
+                syntaxes[s] = `${childName} ${syntaxes[s]}`;
+            }
+        }
+        return syntaxes;
+    }
 };
 
 // Contains info about all the commands
