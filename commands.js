@@ -113,13 +113,13 @@ class CommandArgument {
 
 		// Convert inputs
 		if (this.type == types.boolean) {
-			if (input.startsWith("true")) {
+			if (input.startsWith("true") || input.startsWith("yes") || input.startsWith(this.name)) {
 				return {
 					input: true,
 					inputEnd: inputEnd < 0 ? 4 : inputEnd
 				};
 			}
-			if (input.startsWith("false")) {
+			if (input.startsWith("false") || input.startsWith("no")) {
 				return {
 					input: false,
 					inputEnd: inputEnd < 0 ? 5 : inputEnd
@@ -280,7 +280,7 @@ const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, nu
 		new CommandArgument(types.integer, "gameWidth", "Amount of squares horizontally.", null, 
 			new CommandArgument(types.integer, "gameHeight", "Amount of squares vertically.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message, true),
 				new CommandArgument(types.integer, "numMines", "Number of mines in the game.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true),
-					new CommandArgument(types.command, "dontStartUncovered", "Option to not uncover the first part of the minesweeper field automatically.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true, true))
+					new CommandArgument(types.boolean, "dontStartUncovered", "Option to not uncover the first part of the minesweeper field automatically.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true, true))
 				)
 			)
 		)
@@ -290,7 +290,7 @@ const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, nu
 		new CommandArgument(types.integer, "gameWidth", "Amount of squares horizontally.", null, 
 			new CommandArgument(types.integer, "gameHeight", "Amount of squares vertically.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message),
 				new CommandArgument(types.integer, "numMines", "Number of mines in the game.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message),
-					new CommandArgument(types.command, "dontStartUncovered", "Option to not uncover the first part of the minesweeper field automatically.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, false, true))
+					new CommandArgument(types.boolean, "dontStartUncovered", "Option to not uncover the first part of the minesweeper field automatically.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, false, true))
 				)
 			)
 		)
