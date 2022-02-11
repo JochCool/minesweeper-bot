@@ -37,7 +37,7 @@ class CommandArgument {
         this.child = child;
     }
 
-    hasChildren() {
+    get hasChildren() {
         return this.child instanceof CommandArgument || Array.isArray(this.child) && this.child.length > 0;
     }
 
@@ -70,7 +70,7 @@ class CommandArgument {
         // Quotes
         if (input.startsWith('"')) {
             inputEnd = input.slice(1).indexOf('"') + 2;
-            if (inputEnd < 0) {
+            if (inputEnd == 1) {
                 return {
                     input: input,
                     error: "Unmatched quote"
@@ -156,7 +156,7 @@ class CommandArgument {
 
     // Returns the syntax of this argument's child, properly formatted. (If requiredOnly is true, will never return things in square brackets)
     getChildSyntax(withChildren, requiredOnly) {
-        if (!this.hasChildren()) {
+        if (!this.hasChildren) {
             return "";
         }
         let syntax = "";
@@ -200,7 +200,7 @@ class CommandArgument {
                     syntax += " ...";
                 }
             }
-            else if (this.child.hasChildren() && (!requiredOnly && this.child.run)) {
+            else if (this.child.hasChildren && (!requiredOnly && this.child.run)) {
                 syntax += " " + this.child.getChildSyntax(true, requiredOnly);
             }
         }
@@ -215,7 +215,7 @@ class CommandArgument {
 
     // Returns an array of all possible child syntaxes (including the children of the children)
     getAllChildSyntaxes() {
-        if (!this.hasChildren()) {
+        if (!this.hasChildren) {
             return [""];
         }
         let syntaxes = [];

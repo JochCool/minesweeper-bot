@@ -167,10 +167,10 @@ function executeCommand(message, command) {
 		
 		// Go down the arguments tree to run the command
 		let currentArgument = commands;
-		while (currentArgument.child) {
+		while (currentArgument.hasChildren && command != "") {
 			
 			// In case we'll need to remind you of the syntax
-			let syntax = `\`&{currentArgument.getChildSyntax(false, true)}\``;
+			let syntax = `\`${currentArgument.getChildSyntax(false, true)}\``;
 			if (currentArgument.run) syntax += " (optional)";
 			
 			currentArgument = currentArgument.child;
@@ -206,21 +206,23 @@ function executeCommand(message, command) {
 			if (checkResult.inputEnd >= 0) {
 				command = command.substring(checkResult.inputEnd).trim();
 			}
-			
-			// last input; run the command
-			if (checkResult.inputEnd < 0 || command == "" || !currentArgument.child) {
-				commandsThisHour++;
-				if (!currentArgument.run) {
-					message.channel.send(`You're missing one or more required arguments: \`${currentArgument.getChildSyntax(true, true)}\`.`).catch(log);
-					return;
-				}
-				let commandResult = currentArgument.run(message, inputs, client);
-				if (typeof commandResult == "string" && commandResult.length > 0) {
-					message.channel.send(commandResult).catch(log);
-				}
+			else {
 				break;
 			}
 		}
+
+		if (!currentArgument.run) {
+			message.channel.send(`You're missing one or more required arguments: \`${currentArgument.getChildSyntax(true, true)}\`.`).catch(log);
+			return;
+		}
+		
+		// Run the command
+		commandsThisHour++;
+		let commandResult = currentArgument.run(message, inputs, client);
+		if (typeof commandResult == "string" && commandResult.length > 0) {
+			message.channel.send(commandResult).catch(log);
+		}
+		break;
 	}
 	catch (err) {
 		log(err);
