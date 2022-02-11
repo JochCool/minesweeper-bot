@@ -29,240 +29,240 @@ The arguments that get passed into this function are:
 
 class CommandArgument {
 
-    constructor(type, name, description, runFunction, child) {
-        this.type = type;
-        this.name = name;
-        this.description = description;
-        this.run = runFunction;
-        this.child = child;
-    }
+	constructor(type, name, description, runFunction, child) {
+		this.type = type;
+		this.name = name;
+		this.description = description;
+		this.run = runFunction;
+		this.child = child;
+	}
 
-    get hasChildren() {
-        return this.child instanceof CommandArgument || Array.isArray(this.child) && this.child.length > 0;
-    }
+	get hasChildren() {
+		return this.child instanceof CommandArgument || Array.isArray(this.child) && this.child.length > 0;
+	}
 
-    // Returns whether or not the first input in the command string is a valid input for this argument
-    // Checks if the first input in the command string is a valid input for this argument. If so, returns the parsed input and where in the string it ends. If not, returns null.
-    checkInput(input) {
-        if (input == "") {
-            return {
-                input: "",
-                error: "Missing argument"
-            };
-        }
+	// Returns whether or not the first input in the command string is a valid input for this argument
+	// Checks if the first input in the command string is a valid input for this argument. If so, returns the parsed input and where in the string it ends. If not, returns null.
+	checkInput(input) {
+		if (input == "") {
+			return {
+				input: "",
+				error: "Missing argument"
+			};
+		}
 
-        // Literals
-        if (this.type == "literal") {
-            if (input.startsWith(this.name)) {
-                return {
-                    input: this.name,
-                    inputEnd: this.name.length
-                };
-            }
-            return {
-                input: input,
-                error: "Invalid option"
-            };
-        }
-        
-        let inputEnd;
+		// Literals
+		if (this.type == "literal") {
+			if (input.startsWith(this.name)) {
+				return {
+					input: this.name,
+					inputEnd: this.name.length
+				};
+			}
+			return {
+				input: input,
+				error: "Invalid option"
+			};
+		}
+		
+		let inputEnd;
 
-        // Quotes
-        if (input.startsWith('"')) {
-            inputEnd = input.slice(1).indexOf('"') + 2;
-            if (inputEnd == 1) {
-                return {
-                    input: input,
-                    error: "Unmatched quote"
-                };
-            }
-            input = input.slice(1, inputEnd - 1);
-        }
+		// Quotes
+		if (input.startsWith('"')) {
+			inputEnd = input.slice(1).indexOf('"') + 2;
+			if (inputEnd == 1) {
+				return {
+					input: input,
+					error: "Unmatched quote"
+				};
+			}
+			input = input.slice(1, inputEnd - 1);
+		}
 
-        // Spaces / new lines
-        else if (this.child) {
-            // Find the first space or new line
-            let nextSpace = input.indexOf(' '), nextNewLine = input.indexOf('\n');
-            if (nextSpace < 0) {
-                inputEnd = nextNewLine;
-            }
-            else if (nextNewLine >= 0) {
-                inputEnd = Math.min(nextSpace, nextNewLine);
-            }
-            else {
-                inputEnd = nextSpace;
-            }
+		// Spaces / new lines
+		else if (this.child) {
+			// Find the first space or new line
+			let nextSpace = input.indexOf(' '), nextNewLine = input.indexOf('\n');
+			if (nextSpace < 0) {
+				inputEnd = nextNewLine;
+			}
+			else if (nextNewLine >= 0) {
+				inputEnd = Math.min(nextSpace, nextNewLine);
+			}
+			else {
+				inputEnd = nextSpace;
+			}
 
-            if (inputEnd >= 0) {
-                input = input.substring(0, inputEnd);
-            }
-        }
-        else {
-            inputEnd = -1;
-        }
+			if (inputEnd >= 0) {
+				input = input.substring(0, inputEnd);
+			}
+		}
+		else {
+			inputEnd = -1;
+		}
 
-        // Convert inputs
-        // Note: most of these aren't used by this bot; I've just copied this code from my other bot.
-        if (this.type == "boolean") {
-            if (input.startsWith("true")) {
-                return {
-                    input: true,
-                    inputEnd: inputEnd < 0 ? 4 : inputEnd
-                };
-            }
-            if (input.startsWith("false")) {
-                return {
-                    input: false,
-                    inputEnd: inputEnd < 0 ? 5 : inputEnd
-                };
-            }
-            return {
-                input: input,
-                error: "Must be true or false"
-            };
-        }
-        if (this.type == "number" || this.type == "integer") {
-            let num = Number(input);
-            if (isNaN(num)) {
-                return {
-                    input: input,
-                    error: "Not a valid number"
-                };
-            }
-            if (this.type == "integer" && num % 1 != 0) {
-                return {
-                    input: input,
-                    error: "Not an integer"
-                };
-            }
-            return {
-                input: num,
-                inputEnd: inputEnd
-            };
-        }
+		// Convert inputs
+		// Note: most of these aren't used by this bot; I've just copied this code from my other bot.
+		if (this.type == "boolean") {
+			if (input.startsWith("true")) {
+				return {
+					input: true,
+					inputEnd: inputEnd < 0 ? 4 : inputEnd
+				};
+			}
+			if (input.startsWith("false")) {
+				return {
+					input: false,
+					inputEnd: inputEnd < 0 ? 5 : inputEnd
+				};
+			}
+			return {
+				input: input,
+				error: "Must be true or false"
+			};
+		}
+		if (this.type == "number" || this.type == "integer") {
+			let num = Number(input);
+			if (isNaN(num)) {
+				return {
+					input: input,
+					error: "Not a valid number"
+				};
+			}
+			if (this.type == "integer" && num % 1 != 0) {
+				return {
+					input: input,
+					error: "Not an integer"
+				};
+			}
+			return {
+				input: num,
+				inputEnd: inputEnd
+			};
+		}
 
-        if (this.type == "text") {
-            return {
-                input: input,
-                inputEnd: inputEnd
-            };
-        }
-        
-        return {
-            input: input,
-            error: "Invalid input"
-        };
-    }
+		if (this.type == "text") {
+			return {
+				input: input,
+				inputEnd: inputEnd
+			};
+		}
+		
+		return {
+			input: input,
+			error: "Invalid input"
+		};
+	}
 
-    // Returns the syntax of this argument's child, properly formatted. (If requiredOnly is true, will never return things in square brackets)
-    getChildSyntax(withChildren, requiredOnly) {
-        if (!this.hasChildren) {
-            return "";
-        }
-        let syntax = "";
-        let childrenHaveChildren = false;
+	// Returns the syntax of this argument's child, properly formatted. (If requiredOnly is true, will never return things in square brackets)
+	getChildSyntax(withChildren, requiredOnly) {
+		if (!this.hasChildren) {
+			return "";
+		}
+		let syntax = "";
+		let childrenHaveChildren = false;
 
-        // Multiple children: loop through them
-        if (Array.isArray(this.child)) {
-            syntax += "(";
-            for (var i = 0; i < this.child.length; i++) {
-                if (i > 0) {
-                    syntax += "|";
-                }
-                if (this.child[i].type == "literal") {
-                    syntax += this.child[i].name;
-                }
-                else {
-                    syntax += `<${this.child[i].name}>`;
-                }
-                if (this.child[i].child) {
-                    childrenHaveChildren = true;
-                }
-            }
-            syntax += ")";
-        }
-
-
-        // Single child
-        else {
-            if (this.child.type == "literal") {
-                syntax += this.child.name;
-            }
-            else {
-                syntax += `<${this.child.name}>`;
-            }
-        }
-
-        // Add children's syntax if desired
-        if (withChildren) {
-            if (Array.isArray(this.child)) {
-                if (childrenHaveChildren) {
-                    syntax += " ...";
-                }
-            }
-            else if (this.child.hasChildren && (!requiredOnly && this.child.run)) {
-                syntax += " " + this.child.getChildSyntax(true, requiredOnly);
-            }
-        }
-
-        // Optional children
-        if (!requiredOnly && this.run) {
-            syntax = `[${syntax}]`;
-        }
-
-        return syntax;
-    }
-
-    // Returns an array of all possible child syntaxes (including the children of the children)
-    getAllChildSyntaxes() {
-        if (!this.hasChildren) {
-            return [""];
-        }
-        let syntaxes = [];
-
-        // Loop through all children
-        if (Array.isArray(this.child)) {
-            for (var i = 0; i < this.child.length; i++) {
-                let thesesyntaxes = this.child[i].getAllChildSyntaxes();
-                let childName = this.child[i].name;
-                if (this.child[i].type != "literal") {
-                    childName = `<${childName}>`;
-                }
-                if (this.run) {
-                    childName = `[${childName}]`;
-                }
-                for (var s = 0; s < thesesyntaxes.length; s++) {
-                    syntaxes.push(`${childName} ${thesesyntaxes[s]}`);
-                }
-            }
-        }
+		// Multiple children: loop through them
+		if (Array.isArray(this.child)) {
+			syntax += "(";
+			for (var i = 0; i < this.child.length; i++) {
+				if (i > 0) {
+					syntax += "|";
+				}
+				if (this.child[i].type == "literal") {
+					syntax += this.child[i].name;
+				}
+				else {
+					syntax += `<${this.child[i].name}>`;
+				}
+				if (this.child[i].child) {
+					childrenHaveChildren = true;
+				}
+			}
+			syntax += ")";
+		}
 
 
-        // Just the one child
-        else {
-            syntaxes = this.child.getAllChildSyntaxes();
-            let childName = this.child.name;
-            if (this.child.type != "literal") {
-                childName = `<${childName}>`;
-            }
-            if (this.run) {
-                childName = `[${childName}]`;
-            }
-            for (var s = 0; s < syntaxes.length; s++) {
-                syntaxes[s] = `${childName} ${syntaxes[s]}`;
-            }
-        }
-        return syntaxes;
-    }
+		// Single child
+		else {
+			if (this.child.type == "literal") {
+				syntax += this.child.name;
+			}
+			else {
+				syntax += `<${this.child.name}>`;
+			}
+		}
+
+		// Add children's syntax if desired
+		if (withChildren) {
+			if (Array.isArray(this.child)) {
+				if (childrenHaveChildren) {
+					syntax += " ...";
+				}
+			}
+			else if (this.child.hasChildren && (!requiredOnly && this.child.run)) {
+				syntax += " " + this.child.getChildSyntax(true, requiredOnly);
+			}
+		}
+
+		// Optional children
+		if (!requiredOnly && this.run) {
+			syntax = `[${syntax}]`;
+		}
+
+		return syntax;
+	}
+
+	// Returns an array of all possible child syntaxes (including the children of the children)
+	getAllChildSyntaxes() {
+		if (!this.hasChildren) {
+			return [""];
+		}
+		let syntaxes = [];
+
+		// Loop through all children
+		if (Array.isArray(this.child)) {
+			for (var i = 0; i < this.child.length; i++) {
+				let thesesyntaxes = this.child[i].getAllChildSyntaxes();
+				let childName = this.child[i].name;
+				if (this.child[i].type != "literal") {
+					childName = `<${childName}>`;
+				}
+				if (this.run) {
+					childName = `[${childName}]`;
+				}
+				for (var s = 0; s < thesesyntaxes.length; s++) {
+					syntaxes.push(`${childName} ${thesesyntaxes[s]}`);
+				}
+			}
+		}
+
+
+		// Just the one child
+		else {
+			syntaxes = this.child.getAllChildSyntaxes();
+			let childName = this.child.name;
+			if (this.child.type != "literal") {
+				childName = `<${childName}>`;
+			}
+			if (this.run) {
+				childName = `[${childName}]`;
+			}
+			for (var s = 0; s < syntaxes.length; s++) {
+				syntaxes[s] = `${childName} ${syntaxes[s]}`;
+			}
+		}
+		return syntaxes;
+	}
 };
 
 // Contains info about all the commands
 const commands = new CommandArgument("root", guildprefixes.defaultprefix, null, null, [
 	new CommandArgument("literal", "help", "Lists available commands.", message => {
-        let prefix = guildprefixes.getPrefix(message.guild);
+		let prefix = guildprefixes.getPrefix(message.guild);
 		let returnTxt = "";
 		for (var i = 0; i < commands.child.length; i++) {
-            let command = commands.child[i];
+			let command = commands.child[i];
 			returnTxt += `\n• \`${prefix}${command.name} ${command.getChildSyntax(true)}\` \u2015 ${command.description}`;
 		}
 		if (returnTxt == "") {
@@ -291,7 +291,7 @@ const commands = new CommandArgument("root", guildprefixes.defaultprefix, null, 
 	),
 	new CommandArgument("literal", "ms", "Alias of the minesweeper command.", null),
 	new CommandArgument("literal", "info", "Gives info about the bot.", message => {
-        let prefix = guildprefixes.getPrefix(message.guild);
+		let prefix = guildprefixes.getPrefix(message.guild);
 		let minesweeperSyntax = commands.child.find(arg => arg.name == "minesweeper").getChildSyntax(true);
 		return `Hello, I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! To generate a new minesweeper game, use the \`${prefix}minesweeper\` command (or its alias \`${prefix}ms\`):\n\`\`\`\n${prefix}minesweeper ${minesweeperSyntax}\n\`\`\`\`gameWidth\` and \`gameHeight\` tell me how many squares the game should be wide and tall, for a maximum of 40x20. Default is 8x8.\n\`numMines\` is how many mines there should be in the game, the more mines the more difficult it is. If omitted, I will pick a number based on the size of the game.\nWhen you run this command, I will reply with a grid of spoiler tags. Unless you wrote \`dontStartUncovered\`, the first zeroes will have already been opened for you.\n\nIf you don't know how to play Minesweeper, get out of the rock you've been living under and use the \`${prefix}howtoplay\` command. For a list of all commands and their syntaxes, use \`${prefix}help\`.\n\nMy creator is @JochCool#1314 and I'm at version ${package.version}. For those interested, my source code is available on GitHub: ${package.repository}. You can submit bug reports and feature requests there.\nThank you for using me!`;
 	}),
@@ -315,7 +315,7 @@ const commands = new CommandArgument("root", guildprefixes.defaultprefix, null, 
 				return "The prefix must be at least one character long.";
 			}
 
-            let prevprefix = guildprefixes.getPrefix(message.guild);
+			let prevprefix = guildprefixes.getPrefix(message.guild);
 			if (prevprefix == inputs.prefix) {
 				return "The prefix didn't change.";
 			}
