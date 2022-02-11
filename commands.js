@@ -182,15 +182,12 @@ class CommandArgument {
 			syntax += ")";
 		}
 
-
 		// Single child
+		else if (this.child.type == "literal") {
+			syntax += this.child.name;
+		}
 		else {
-			if (this.child.type == "literal") {
-				syntax += this.child.name;
-			}
-			else {
-				syntax += `<${this.child.name}>`;
-			}
+			syntax += `<${this.child.name}>`;
 		}
 
 		// Add children's syntax if desired
@@ -200,7 +197,7 @@ class CommandArgument {
 					syntax += " ...";
 				}
 			}
-			else if (this.child.hasChildren && (!requiredOnly && this.child.run)) {
+			else if (this.child.hasChildren && (!requiredOnly || this.child.run)) {
 				syntax += " " + this.child.getChildSyntax(true, requiredOnly);
 			}
 		}
@@ -263,7 +260,7 @@ const commands = new CommandArgument("root", guildprefixes.defaultprefix, null, 
 		let returnTxt = "";
 		for (var i = 0; i < commands.child.length; i++) {
 			let command = commands.child[i];
-			returnTxt += `\n• \`${prefix}${command.name} ${command.getChildSyntax(true)}\` \u2015 ${command.description}`;
+			returnTxt += `\n• \`${prefix}${command.name} ${command.getChildSyntax(true)}\`\n\t\t${command.description}`;
 		}
 		if (returnTxt == "") {
 			return "You cannot execute any commands!";
