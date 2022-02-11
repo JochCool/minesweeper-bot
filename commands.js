@@ -12,11 +12,12 @@ Each CommandArgument object has a name, which is what displays as a one-word des
 Within one branch of the command tree, there should NEVER be multiple arguments with the same name!
 
 There are various types of arguments:
-- "literal" (you have to copy the name exactly)
-- "text" (you can fill in whatever text you want)
-- "number" (you have to fill in a valid number)
-- "integer" (you have to fill in a valid integer)
-- "root" (not an argument, this is the first node in the tree)
+- command names (you have to copy the name exactly)
+- string (you can fill in whatever text you want)
+- number (you have to fill in a valid number)
+- integer (you have to fill in a valid integer)
+- boolean (true or false)
+- root (not an argument, this is the first node in the tree)
 
 Some arguments have a run function. This function gets executed if this argument was the last one to be specified in the command.
 If instead of a function, there is null, that means that the child of this argument is not optional. This child then must ALWAYS exist.
@@ -26,6 +27,15 @@ The arguments that get passed into this function are:
 - Object, lists the inputs of the user, with the keys being the name of the argument that was the user input.
 - Client, the Discord client that received the message.
 */
+
+const types = {
+	root: 0,
+	command: 1,
+	string: 3,
+	integer: 4,
+	boolean: 5,
+	number: 10,
+};
 
 class CommandArgument {
 
@@ -52,7 +62,7 @@ class CommandArgument {
 		}
 
 		// Literals
-		if (this.type == "literal") {
+		if (this.type == types.command) {
 			if (input.startsWith(this.name)) {
 				return {
 					input: this.name,
@@ -102,8 +112,7 @@ class CommandArgument {
 		}
 
 		// Convert inputs
-		// Note: most of these aren't used by this bot; I've just copied this code from my other bot.
-		if (this.type == "boolean") {
+		if (this.type == types.boolean) {
 			if (input.startsWith("true")) {
 				return {
 					input: true,
@@ -121,7 +130,7 @@ class CommandArgument {
 				error: "Must be true or false"
 			};
 		}
-		if (this.type == "number" || this.type == "integer") {
+		if (this.type == types.number || this.type == types.integer) {
 			let num = Number(input);
 			if (isNaN(num)) {
 				return {
@@ -129,7 +138,7 @@ class CommandArgument {
 					error: "Not a valid number"
 				};
 			}
-			if (this.type == "integer" && num % 1 != 0) {
+			if (this.type == types.integer && num % 1 != 0) {
 				return {
 					input: input,
 					error: "Not an integer"
@@ -141,7 +150,7 @@ class CommandArgument {
 			};
 		}
 
-		if (this.type == "text") {
+		if (this.type == types.string) {
 			return {
 				input: input,
 				inputEnd: inputEnd
@@ -150,7 +159,7 @@ class CommandArgument {
 		
 		return {
 			input: input,
-			error: "Invalid input"
+			error: "This argument is only supported in slash commands"
 		};
 	}
 
@@ -169,7 +178,7 @@ class CommandArgument {
 				if (i > 0) {
 					syntax += "|";
 				}
-				if (this.child[i].type == "literal") {
+				if (this.child[i].type == types.command) {
 					syntax += this.child[i].name;
 				}
 				else {
@@ -183,7 +192,7 @@ class CommandArgument {
 		}
 
 		// Single child
-		else if (this.child.type == "literal") {
+		else if (this.child.type == types.command) {
 			syntax += this.child.name;
 		}
 		else {
@@ -222,7 +231,7 @@ class CommandArgument {
 			for (var i = 0; i < this.child.length; i++) {
 				let thesesyntaxes = this.child[i].getAllChildSyntaxes();
 				let childName = this.child[i].name;
-				if (this.child[i].type != "literal") {
+				if (this.child[i].type != types.command) {
 					childName = `<${childName}>`;
 				}
 				if (this.run) {
@@ -239,7 +248,7 @@ class CommandArgument {
 		else {
 			syntaxes = this.child.getAllChildSyntaxes();
 			let childName = this.child.name;
-			if (this.child.type != "literal") {
+			if (this.child.type != types.command) {
 				childName = `<${childName}>`;
 			}
 			if (this.run) {
@@ -254,8 +263,8 @@ class CommandArgument {
 };
 
 // Contains info about all the commands
-const commands = new CommandArgument("root", guildprefixes.defaultprefix, null, null, [
-	new CommandArgument("literal", "help", "Lists available commands.", message => {
+const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, null, null, [
+	new CommandArgument(types.command, "help", "Lists available commands.", message => {
 		let prefix = guildprefixes.getPrefix(message.guild);
 		let returnTxt = "";
 		for (var i = 0; i < commands.child.length; i++) {
@@ -267,41 +276,41 @@ const commands = new CommandArgument("root", guildprefixes.defaultprefix, null, 
 		}
 		return `You can execute the following commands: ${returnTxt}`;
 	}),
-	new CommandArgument("literal", "minesweeperraw", "Creates a Minesweeper game and shows the markdown code for copy-pasting.", (message, inputs) => generateGame(undefined, undefined, undefined, message, true),
-		new CommandArgument("integer", "gameWidth", "Amount of squares horizontally.", null, 
-			new CommandArgument("integer", "gameHeight", "Amount of squares vertically.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message, true),
-				new CommandArgument("integer", "numMines", "Number of mines in the game.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true),
-					new CommandArgument("literal", "dontStartUncovered", "Option to not uncover the first part of the minesweeper field automatically.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true, true))
+	new CommandArgument(types.command, "minesweeperraw", "Creates a Minesweeper game and shows the markdown code for copy-pasting.", (message, inputs) => generateGame(undefined, undefined, undefined, message, true),
+		new CommandArgument(types.integer, "gameWidth", "Amount of squares horizontally.", null, 
+			new CommandArgument(types.integer, "gameHeight", "Amount of squares vertically.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message, true),
+				new CommandArgument(types.integer, "numMines", "Number of mines in the game.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true),
+					new CommandArgument(types.command, "dontStartUncovered", "Option to not uncover the first part of the minesweeper field automatically.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true, true))
 				)
 			)
 		)
 	),
-	new CommandArgument("literal", "msraw", "Alias of the minesweeperraw command.", null),
-	new CommandArgument("literal", "minesweeper", "Creates a Minesweeper game for you to play!", (message, inputs) => generateGame(undefined, undefined, undefined, message),
-		new CommandArgument("integer", "gameWidth", "Amount of squares horizontally.", null, 
-			new CommandArgument("integer", "gameHeight", "Amount of squares vertically.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message),
-				new CommandArgument("integer", "numMines", "Number of mines in the game.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message),
-					new CommandArgument("literal", "dontStartUncovered", "Option to not uncover the first part of the minesweeper field automatically.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, false, true))
+	new CommandArgument(types.command, "msraw", "Alias of the minesweeperraw command.", null),
+	new CommandArgument(types.command, "minesweeper", "Creates a Minesweeper game for you to play!", (message, inputs) => generateGame(undefined, undefined, undefined, message),
+		new CommandArgument(types.integer, "gameWidth", "Amount of squares horizontally.", null, 
+			new CommandArgument(types.integer, "gameHeight", "Amount of squares vertically.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message),
+				new CommandArgument(types.integer, "numMines", "Number of mines in the game.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message),
+					new CommandArgument(types.command, "dontStartUncovered", "Option to not uncover the first part of the minesweeper field automatically.", (message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, false, true))
 				)
 			)
 		)
 	),
-	new CommandArgument("literal", "ms", "Alias of the minesweeper command.", null),
-	new CommandArgument("literal", "info", "Gives info about the bot.", message => {
+	new CommandArgument(types.command, "ms", "Alias of the minesweeper command.", null),
+	new CommandArgument(types.command, "info", "Gives info about the bot.", message => {
 		let prefix = guildprefixes.getPrefix(message.guild);
 		let minesweeperSyntax = commands.child.find(arg => arg.name == "minesweeper").getChildSyntax(true);
 		return `Hello, I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! To generate a new minesweeper game, use the \`${prefix}minesweeper\` command (or its alias \`${prefix}ms\`):\n\`\`\`\n${prefix}minesweeper ${minesweeperSyntax}\n\`\`\`\`gameWidth\` and \`gameHeight\` tell me how many squares the game should be wide and tall, for a maximum of 40x20. Default is 8x8.\n\`numMines\` is how many mines there should be in the game, the more mines the more difficult it is. If omitted, I will pick a number based on the size of the game.\nWhen you run this command, I will reply with a grid of spoiler tags. Unless you wrote \`dontStartUncovered\`, the first zeroes will have already been opened for you.\n\nIf you don't know how to play Minesweeper, get out of the rock you've been living under and use the \`${prefix}howtoplay\` command. For a list of all commands and their syntaxes, use \`${prefix}help\`.\n\nMy creator is @JochCool#1314 and I'm at version ${package.version}. For those interested, my source code is available on GitHub: ${package.repository}. You can submit bug reports and feature requests there.\nThank you for using me!`;
 	}),
-	new CommandArgument("literal", "howtoplay", "Teaches you how to play Minesweeper.", () => `In Minesweeper, you get a rectangular grid of squares. In some of those squares, mines are hidden, but you don't know which squares. The objective is 'open' all the squares that don't have a hidden mine, but to not touch the ones that do.\n\nLet's start with an example. ${generateGame(5, 5, 3)}\nTo open a mine, click the spoiler tag. So go click one now. The contents of that square will be revealed when you do so. If it's a mine (:bomb:), you lose! If it's not a mine, you get a mysterious number instead, like :two:. This number is there to help you, as it indicates how many mines are in the eight squares that touch it (horizontally, vertically or diagonally). Using this information and some good logic, you can figure out the location of most of the mines!`),
-	new CommandArgument("literal", "news", "Lists the past three updates to the bot.", () => {
+	new CommandArgument(types.command, "howtoplay", "Teaches you how to play Minesweeper.", () => `In Minesweeper, you get a rectangular grid of squares. In some of those squares, mines are hidden, but you don't know which squares. The objective is 'open' all the squares that don't have a hidden mine, but to not touch the ones that do.\n\nLet's start with an example. ${generateGame(5, 5, 3)}\nTo open a mine, click the spoiler tag. So go click one now. The contents of that square will be revealed when you do so. If it's a mine (:bomb:), you lose! If it's not a mine, you get a mysterious number instead, like :two:. This number is there to help you, as it indicates how many mines are in the eight squares that touch it (horizontally, vertically or diagonally). Using this information and some good logic, you can figure out the location of most of the mines!`),
+	new CommandArgument(types.command, "news", "Lists the past three updates to the bot.", () => {
 		let returnTxt = "These were my past three updates:\n";
 		for (var i = 0; i < 3 && i < updates.length; i++) {
 			returnTxt += `\nVersion ${updates[i].name} \u2015 ${updates[i].description}`; // U+2015 = horizontal bar
 		}
 		return returnTxt;
 	}),
-	new CommandArgument("literal", "setprefix", "Changes the prefix for the bot, if you have Manage Server permissions.", null, 
-		new CommandArgument("text", "prefix", "The new prefix for the bot.", (message, inputs) => {
+	new CommandArgument(types.command, "setprefix", "Changes the prefix for the bot, if you have Manage Server permissions.", null, 
+		new CommandArgument(types.string, "prefix", "The new prefix for the bot.", (message, inputs) => {
 			if (!message.guild) {
 				return "The prefix can only be changed in a server, not here.";
 			}
@@ -321,7 +330,7 @@ const commands = new CommandArgument("root", guildprefixes.defaultprefix, null, 
 			return `The prefix of this server has been changed from \`${prevprefix}\` to \`${inputs.prefix}\`.`;
 		})
 	),
-	new CommandArgument("literal", "ping", "Pong?", (message, inputs, client) => `pong (${Math.floor(client.ws.ping)}ms heartbeat)`)
+	new CommandArgument(types.command, "ping", "Pong?", (message, inputs, client) => `pong (${Math.floor(client.ws.ping)}ms heartbeat)`)
 ]);
 
 // cheating here because aliases haven't been implemented yet
