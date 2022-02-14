@@ -8,7 +8,7 @@ function log(message) {
 		message = message.stack;
 	}
 	var now = new Date();
-	console.log(`[Minesweeper Bot] [${now.getUTCFullYear()}-${toTwoDigitString(now.getUTCMonth()+1)}-${toTwoDigitString(now.getUTCDate())} ${toTwoDigitString(now.getUTCHours())}:${toTwoDigitString(now.getUTCMinutes())}:${toTwoDigitString(now.getUTCSeconds())}] ${message}`);
+	console.log(`[Minesweeper Bot] [${now.getFullYear()}-${toTwoDigitString(now.getMonth()+1)}-${toTwoDigitString(now.getDate())} ${toTwoDigitString(now.getHours())}:${toTwoDigitString(now.getMinutes())}:${toTwoDigitString(now.getSeconds())}] ${message}`);
 };
 function toTwoDigitString(num) {
 	var str = num.toString();
@@ -222,7 +222,6 @@ function executeCommand(message, command) {
 		if (typeof commandResult == "string" && commandResult.length > 0) {
 			message.channel.send(commandResult).catch(log);
 		}
-		break;
 	}
 	catch (err) {
 		log(err);
