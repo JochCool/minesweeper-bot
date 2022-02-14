@@ -226,48 +226,6 @@ class CommandArgument {
 
 		return syntax;
 	}
-
-	// Returns an array of all possible child syntaxes (including the children of the children)
-	getAllChildSyntaxes() {
-		if (!this.hasChildren) {
-			return [""];
-		}
-		let syntaxes = [];
-
-		// Loop through all children
-		if (Array.isArray(this.child)) {
-			for (var i = 0; i < this.child.length; i++) {
-				let thesesyntaxes = this.child[i].getAllChildSyntaxes();
-				let childName = this.child[i].name;
-				if (this.child[i].type != types.command) {
-					childName = `<${childName}>`;
-				}
-				if (this.run) {
-					childName = `[${childName}]`;
-				}
-				for (var s = 0; s < thesesyntaxes.length; s++) {
-					syntaxes.push(`${childName} ${thesesyntaxes[s]}`);
-				}
-			}
-		}
-
-
-		// Just the one child
-		else {
-			syntaxes = this.child.getAllChildSyntaxes();
-			let childName = this.child.name;
-			if (this.child.type != types.command) {
-				childName = `<${childName}>`;
-			}
-			if (this.run) {
-				childName = `[${childName}]`;
-			}
-			for (var s = 0; s < syntaxes.length; s++) {
-				syntaxes[s] = `${childName} ${syntaxes[s]}`;
-			}
-		}
-		return syntaxes;
-	}
 };
 
 // Contains info about all the commands
