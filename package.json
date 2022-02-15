@@ -16,6 +16,7 @@
 		"url": "https://github.com/JochCool/minesweeper-bot/issues/new?template=bug_report.md&labels=bug"
 	},
 	"dependencies": {
+		"@discordjs/rest": "^0.3.0",
 		"discord.js": "^13.3.1",
 		"topgg-autoposter": "^2.0.0"
 	}
