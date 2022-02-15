@@ -126,8 +126,8 @@ client.on("guildDelete", guild => {
 	log(`Left a guild :(. It was called "${guild.name}" (Current count: ${getGuildCount()})`);
 });
 
-/** ───── MESSAGE PARSER ───── **/
-// This section is to evaluate your commands and reply to your messages
+/** ───── COMMAND PARSER ───── **/
+// This section is to evaluate your commands and reply to your commands
 
 client.on('messageCreate', message => {
 	
@@ -139,15 +139,25 @@ client.on('messageCreate', message => {
 	// Commands
 	let prefix = guildprefixes.getPrefix(message.guild);
 	if (message.content.startsWith(prefix) && (!message.guild || message.channel.memberPermissions(message.guild.me).has("SEND_MESSAGES"))) {
-		executeCommand(message, message.content.substring(prefix.length));
+		let result = executeCommand(message, message.content.substring(prefix.length).trim()).content;
+
+		if (typeof result == "string" && result.length > 0) {
+			message.channel.send(result);
+		}
 	}
 });
 
-function executeCommand(message, command) {
+client.on('interactionCreate', interaction => {
+	if (!interaction.isCommand()) {
+		return;
+	}
+	interaction.reply(executeCommand(interaction, interaction.commandName, interaction.options));
+})
+
+// For text commands, 'command' will be the whole command, for interactions it'll be only the command name and 'options' contains the rest.
+function executeCommand(source, command, options) {
 	try {
 		//log("Executing command: "+command);
-
-		command = command.trim();
 
 		// The last function that gets encountered will be executed.
 		let runFunction = commands.run;
@@ -175,28 +185,42 @@ function executeCommand(message, command) {
 		if (argument.options) {
 			for (var i = 0; i < argument.options.length; i++) {
 
-				// No more input?
-				if (command == "") {
-					if (argument.options[i].required) {
-						message.channel.send(`You're missing one or more required arguments: \`${argument.getOptionsSyntax(i, true)}\`.`).catch(log);
-						return;
+				// Slash commands
+				if (options) {
+					let option = options.get(argument.options[i].name);
+
+					if (option) {
+						inputs[i] = option.value;
 					}
-					break;
+					// I know that Discord will disallow this for me, but it doesn't hurt to check.
+					else if (argument.options[i].required) {
+						return { content: `You're missing a required argument: \`${argument.getOptionsSyntax(i, true)}\`.`, ephemeral: true };
+					}
 				}
-	
-				// Check input
-				let checkResult = argument.options[i].checkInput(command);
-				if (checkResult.error) {
-					message.channel.send(`${checkResult.error}: \`${checkResult.input}\` (at \`${argument.getOptionsSyntax(i, true)}\`).`).catch(log);
-					return;
-				}
-	
-				inputs[i] = checkResult.input;
-				if (checkResult.inputEnd < 0) {
-					command = "";
-				}
+				// Text commands
 				else {
-					command = command.substring(checkResult.inputEnd).trim();
+					// No more input?
+					if (command == "") {
+						if (argument.options[i].required) {
+							return { content: `You're missing one or more required arguments: \`${argument.getOptionsSyntax(i, true)}\`.`, ephemeral: true };
+						}
+						break;
+					}
+
+					// Check input
+					let checkResult = argument.options[i].checkInput(command);
+					if (checkResult.error) {
+						return { content: `${checkResult.error}: \`${checkResult.input}\` (at \`${argument.getOptionsSyntax(i, true)}\`).`, ephemeral: true };
+					}
+
+					inputs[i] = checkResult.input;
+				
+					if (checkResult.inputEnd < 0) {
+						command = "";
+					}
+					else {
+						command = command.substring(checkResult.inputEnd).trim();
+					}
 				}
 
 				if (argument.options[i].run) {
@@ -207,20 +231,16 @@ function executeCommand(message, command) {
 
 		if (!runFunction) {
 			log("WARNING: no command execution method found.");
-			message.channel.send("It looks like this command has not been implemented yet. Please contact my owner if you think this is an error.");
-			return;
+			return { content: "It looks like this command has not been implemented yet. Please contact my owner if you think this is an error.", ephemeral: true };
 		}
 		
 		// Run the command
-		let commandResult = runFunction(message, inputs, client);
-		if (typeof commandResult == "string" && commandResult.length > 0) {
-			message.channel.send(commandResult).catch(log);
-		}
+		return { content: runFunction(source, inputs, client) };
 	}
 	catch (err) {
 		log(err);
 		commandsThisHour++;
-		message.channel.send("An unknown error occurred while evaluating your command.").catch(log);
+		return { content: "An unknown error occurred while evaluating your command.", ephemeral: true };
 	}
 };
 

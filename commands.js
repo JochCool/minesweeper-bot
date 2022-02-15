@@ -15,9 +15,9 @@ If this is not the last argument specified, but the specified arguments after th
 There must always be an argument containing a run function before the first optional argument, otherwise the command has no functionality if no optional arguments are specified.
 
 The arguments that get passed into the run function are:
-- Message, the Discord message that triggered this command.
+- Message|CommandInteraction, the Discord message or slash command interaction that triggered this command.
 - Array, lists the values of the options specified by the user, in the same order as listed in the command.
-- Client, the Discord client that received the message.
+- Client, the Discord client that received the command.
 */
 
 const types = {
@@ -246,8 +246,8 @@ var minesweeperOptions = [
 const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, null).setOptions([
 
 	new CommandArgument(types.command, "help", "Lists available commands.", true)
-		.setRunFunction(message => {
-			let prefix = guildprefixes.getPrefix(message.guild);
+		.setRunFunction(source => {
+			let prefix = guildprefixes.getPrefix(source.guild);
 			let returnTxt = "";
 			for (var i = 0; i < commands.options.length; i++) {
 				let command = commands.options[i];
@@ -260,24 +260,24 @@ const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, nu
 		}),
 	
 	new CommandArgument(types.command, "minesweeperraw", "Creates a Minesweeper game and shows the markdown code for copy-pasting.")
-		.setRunFunction((message, inputs) => generateGame(inputs[0], inputs[1], inputs[2], message, true, inputs[3]))
+		.setRunFunction((source, inputs) => generateGame(inputs[0], inputs[1], inputs[2], source, true, inputs[3]))
 		.setOptions(minesweeperOptions),
 
 	new CommandArgument(types.command, "msraw", "Alias of the minesweeperraw command.", true)
-		.setRunFunction((message, inputs) => generateGame(inputs[0], inputs[1], inputs[2], message, true, inputs[3]))
+		.setRunFunction((source, inputs) => generateGame(inputs[0], inputs[1], inputs[2], source, true, inputs[3]))
 		.setOptions(minesweeperOptions),
 
 	new CommandArgument(types.command, "minesweeper", "Creates a Minesweeper game for you to play!")
-		.setRunFunction((message, inputs) => generateGame(inputs[0], inputs[1], inputs[2], message, false, inputs[3]))
+		.setRunFunction((source, inputs) => generateGame(inputs[0], inputs[1], inputs[2], source, false, inputs[3]))
 		.setOptions(minesweeperOptions),
 
 	new CommandArgument(types.command, "ms", "Alias of the minesweeper command.", true)
-		.setRunFunction((message, inputs) => generateGame(inputs[0], inputs[1], inputs[2], message, false, inputs[3]))
+		.setRunFunction((source, inputs) => generateGame(inputs[0], inputs[1], inputs[2], source, false, inputs[3]))
 		.setOptions(minesweeperOptions),
 
 	new CommandArgument(types.command, "info", "Gives info about the bot.")
-		.setRunFunction(message => {
-			let prefix = guildprefixes.getPrefix(message.guild);
+		.setRunFunction(source => {
+			let prefix = guildprefixes.getPrefix(source.guild);
 			let minesweeperSyntax = commands.options.find(arg => arg.name == "minesweeper").getChildSyntax(true);
 
 			return `Hello, I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! To generate a new minesweeper game, use the \`${prefix}minesweeper\` command (or its alias \`${prefix}ms\`):\n\`\`\`\n${prefix}minesweeper ${minesweeperSyntax}\n\`\`\`\`gameWidth\` and \`gameHeight\` tell me how many squares the game should be wide and tall, for a maximum of 40x20. Default is 8x8.\n\`numMines\` is how many mines there should be in the game, the more mines the more difficult it is. If omitted, I will pick a number based on the size of the game.\nWhen you run this command, I will reply with a grid of spoiler tags. Unless you wrote \`dontStartUncovered\`, the first zeroes will have already been opened for you.\n\nIf you don't know how to play Minesweeper, get out of the rock you've been living under and use the \`${prefix}howtoplay\` command. For a list of all commands and their syntaxes, use \`${prefix}help\`.\n\nMy creator is @JochCool#1314 and I'm at version ${package.version}. For those interested, my source code is available on GitHub: ${package.repository}. You can submit bug reports and feature requests there.\nThank you for using me!`;
@@ -298,29 +298,29 @@ const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, nu
 	new CommandArgument(types.command, "setprefix", "Changes the prefix for the bot, if you have Manage Server permissions.", true) 
 		.setOptions([
 			new CommandOption(types.string, "prefix", "The new prefix for the bot.", true)
-				.setRunFunction((message, inputs) => {
-					if (!message.guild) {
+				.setRunFunction((source, inputs) => {
+					if (!source.guild) {
 						return "The prefix can only be changed in a server, not here.";
 					}
-					if (!message.member.permissions.has("MANAGE_GUILD")) {
+					if (!source.member.permissions.has("MANAGE_GUILD")) {
 						return "You need the Manage Server permission to change the prefix.";
 					}
 					if (inputs[0].length == 0) {
 						return "The prefix must be at least one character long.";
 					}
 
-					let prevprefix = guildprefixes.getPrefix(message.guild);
+					let prevprefix = guildprefixes.getPrefix(source.guild);
 					if (prevprefix == inputs[0]) {
 						return "The prefix didn't change.";
 					}
 
-					guildprefixes.setPrefix(message.guild, inputs[0]);
+					guildprefixes.setPrefix(source.guild, inputs[0]);
 					return `The prefix of this server has been changed from \`${prevprefix}\` to \`${inputs[0]}\`.`;
 				})
 		]),
 
 	new CommandArgument(types.command, "ping", "Pong?")
-		.setRunFunction((message, inputs, client) => `pong (${Math.floor(client.ws.ping)}ms heartbeat)`)
+		.setRunFunction((source, inputs, client) => `pong (${Math.floor(client.ws.ping)}ms heartbeat)`)
 ]);
 
 module.exports = commands;

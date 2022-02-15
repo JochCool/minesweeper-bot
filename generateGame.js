@@ -5,8 +5,8 @@ const neighbourLocations = [{x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1}, {x: 1,
 
 const numberEmoji = [":zero:", ":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":nine:"];
 
-// Returns the message that the bot should send based on the given inputs.
-module.exports = function generateGame(gameWidth, gameHeight, numMines, message, isRaw, startsNotUncovered) {
+// Returns the text that the bot should reply with based on the given inputs.
+module.exports = function generateGame(gameWidth, gameHeight, numMines, source, isRaw, startsNotUncovered) {
 	
 	/** ──────── CHECKS ──────── **/
 	
@@ -188,7 +188,7 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, message,
 	// Send the messages one by one
 	let i = 0;
 	function sendNextMessage() {
-		if (i < splitReturns.length) message.channel.send(splitReturns[i++]).then(sendNextMessage, log);
+		if (i < splitReturns.length) source.channel.send(splitReturns[i++]).then(sendNextMessage, log);
 	};
 	sendNextMessage();
 };
