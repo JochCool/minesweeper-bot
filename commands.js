@@ -233,10 +233,10 @@ class CommandOption extends CommandArgument {
 }
 
 var minesweeperOptions = [
-	new CommandOption(types.integer, "gameWidth", "Amount of squares horizontally.", false),
-	new CommandOption(types.integer, "gameHeight", "Amount of squares vertically.", false),
-	new CommandOption(types.integer, "numMines", "Number of mines in the game.", false),
-	new CommandOption(types.boolean, "dontStartUncovered", "Option to not uncover the first part of the minesweeper field automatically.", false)
+	new CommandOption(types.integer, "game-width", "Amount of squares horizontally.", false),
+	new CommandOption(types.integer, "game-height", "Amount of squares vertically.", false),
+	new CommandOption(types.integer, "num-mines", "Number of mines in the game.", false),
+	new CommandOption(types.boolean, "dont-start-uncovered", "Option to not uncover the first part of the minesweeper field automatically.", false)
 ];
 
 const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, null).setOptions([
