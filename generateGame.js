@@ -12,7 +12,7 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, source, 
 	
 	// Check game size
 	if (isNaN(gameWidth)) {
-		gameWidth = 8;
+		gameWidth = isNaN(gameHeight) ? 8 : gameHeight;
 	}
 	else if (gameWidth <= 0 || gameHeight <= 0) {
 		return `Uh, I'm not smart enough to generate a maze sized ${gameWidth} by ${gameHeight}. I can only use positive numbers. Sorry :cry:`;
