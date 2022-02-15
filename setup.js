@@ -1,6 +1,7 @@
 // Registers application commands
 // Has a required command line argument for the bot's client ID
 // Also has an optional command line argument for the guild to register the commands in
+// Setting the third command line argument to "delete" will instead make this program delete all registered commands, rather than registering new ones.
 
 const log = require("./log.js");
 
@@ -17,9 +18,6 @@ if (!auth.bottoken || auth.bottoken == "CENSORED") {
 }
 
 const { REST } = require("@discordjs/rest");
-const commands = require("./commands.js");
-
-log(`All modules loaded; registering ${commands.options.length} commands.`)
 
 const rest = new REST({ version: '10' }).setToken(auth.bottoken);
 
@@ -31,12 +29,33 @@ else {
 	path = `/applications/${process.argv[2]}/commands`;
 }
 
-rest.put(path, { body: commands.options }).then(
-	() => {
-		log("Success!");
-	},
-	error => {
-		log("Failed.");
-		log(error);
-	}
-);
+if (process.argv[4] == "delete") {
+	log("All modules loaded; deleting commands.");
+
+	rest.get(path).then(response => {
+		log(response.length + " commands found to delete.");
+		for (var i = 0; i < response.length; i++) {
+			let id = response[i].id;
+			let name = response[i].name;
+			rest.delete(`${path}/${id}`).then(() => log(`Deleted command ${id} (${name})`), log);
+		}
+	}, log);
+}
+else {
+	const commands = require("./commands.js");
+
+	log(`All modules loaded; registering ${commands.options.length} commands.`);
+
+	rest.put(path, { body: commands }).then(
+		response => {
+			log("Success! Registered commands:");
+			for (var i = 0; i < response.length; i++) {
+				log(`/${response[i].name} (id ${response[i].id}, version ${response[i].version})`)
+			}
+		},
+		error => {
+			log("Failed.");
+			log(error);
+		}
+	);
+}
