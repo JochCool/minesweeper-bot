@@ -44,9 +44,11 @@ if (process.argv[4] == "delete") {
 else {
 	const commands = require("./commands.js");
 
-	log(`All modules loaded; registering ${commands.options.length} commands.`);
+	const list = commands.options.filter(command => !command.isTextOnly);
 
-	rest.put(path, { body: commands }).then(
+	log(`All modules loaded; registering ${list.length} commands.`)
+
+	rest.put(path, { body: list }).then(
 		response => {
 			log("Success! Registered commands:");
 			for (var i = 0; i < response.length; i++) {

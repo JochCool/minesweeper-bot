@@ -31,10 +31,14 @@ const types = {
 
 class CommandArgument {
 
-	constructor(type, name, description) {
+	constructor(type, name, description, isTextOnly) {
 		this.type = type;
 		this.name = name;
 		this.description = description;
+		
+		if (isTextOnly) {
+			this.isTextOnly = true;
+		}
 	}
 
 	get isCommand() {
@@ -241,7 +245,7 @@ var minesweeperOptions = [
 
 const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, null).setOptions([
 
-	new CommandArgument(types.command, "help", "Lists available commands.")
+	new CommandArgument(types.command, "help", "Lists available commands.", true)
 		.setRunFunction(message => {
 			let prefix = guildprefixes.getPrefix(message.guild);
 			let returnTxt = "";
@@ -259,7 +263,7 @@ const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, nu
 		.setRunFunction((message, inputs) => generateGame(inputs[0], inputs[1], inputs[2], message, true, inputs[3]))
 		.setOptions(minesweeperOptions),
 
-	new CommandArgument(types.command, "msraw", "Alias of the minesweeperraw command.")
+	new CommandArgument(types.command, "msraw", "Alias of the minesweeperraw command.", true)
 		.setRunFunction((message, inputs) => generateGame(inputs[0], inputs[1], inputs[2], message, true, inputs[3]))
 		.setOptions(minesweeperOptions),
 
@@ -267,7 +271,7 @@ const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, nu
 		.setRunFunction((message, inputs) => generateGame(inputs[0], inputs[1], inputs[2], message, false, inputs[3]))
 		.setOptions(minesweeperOptions),
 
-	new CommandArgument(types.command, "ms", "Alias of the minesweeper command.")
+	new CommandArgument(types.command, "ms", "Alias of the minesweeper command.", true)
 		.setRunFunction((message, inputs) => generateGame(inputs[0], inputs[1], inputs[2], message, false, inputs[3]))
 		.setOptions(minesweeperOptions),
 
@@ -291,7 +295,7 @@ const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, nu
 			return returnTxt;
 		}),
 
-	new CommandArgument(types.command, "setprefix", "Changes the prefix for the bot, if you have Manage Server permissions.") 
+	new CommandArgument(types.command, "setprefix", "Changes the prefix for the bot, if you have Manage Server permissions.", true) 
 		.setOptions([
 			new CommandOption(types.string, "prefix", "The new prefix for the bot.", true)
 				.setRunFunction((message, inputs) => {
