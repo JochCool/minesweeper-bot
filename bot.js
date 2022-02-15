@@ -157,9 +157,9 @@ async function respondToCommand(source, command, options) {
 			return;
 		}
 		try {
-			await source.reply(result[0]);
+			await source.reply(convertMessage(result[0]));
 			for (var i = 1; i < result.length; i++) {
-				await source.channel.send(result[i]);
+				await source.channel.send(convertMessage(result[i]));
 			}
 		}
 		catch (err) {
@@ -167,7 +167,15 @@ async function respondToCommand(source, command, options) {
 		}
 	}
 	else {
-		source.reply(result).catch(log);
+		source.reply(convertMessage(result)).catch(log);
+	}
+
+	function convertMessage(message) {
+		if (typeof message == "string") {
+			message = { content: message };
+		}
+		message.allowedMentions = { repliedUser: false };
+		return message;
 	}
 }
 
