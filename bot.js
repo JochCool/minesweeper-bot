@@ -161,64 +161,71 @@ function executeCommand(message, command) {
 		//log("Executing command: "+command);
 
 		command = command.trim();
-		
-		// Will contain the parameters the user gave and will be passed to the command-specific run function.
-		let inputs = {};
-		
-		// Go down the arguments tree to run the command
-		let currentArgument = commands;
-		while (currentArgument.hasChildren && command != "") {
-			
-			// In case we'll need to remind you of the syntax
-			let syntax = `\`${currentArgument.getChildSyntax(false, true)}\``;
-			if (currentArgument.run) syntax += " (optional)";
-			
-			currentArgument = currentArgument.child;
-			
-			// Check input
-			let checkResult;
-			if (Array.isArray(currentArgument)) {
-				// Find an argument that accepts the input
-				for (var a = 0; a < currentArgument.length; a++) {
-					checkResult = currentArgument[a].checkInput(command);
-					if (!checkResult.error) {
-						notFound = false;
-						currentArgument = currentArgument[a];
-						break;
-					}
+
+		// The last function that gets encountered will be executed.
+		let runFunction = commands.run;
+
+		// Find the command that was run
+		let argument;
+		for (var a = 0; a < commands.options.length; a++) {
+			let checkResult = commands.options[a].checkInput(command);
+			if (!checkResult.error) {
+				argument = commands.options[a];
+				if (argument.run) {
+					runFunction = argument.run;
 				}
-			}
-			else {
-				checkResult = currentArgument.checkInput(command);
-			}
-			
-			if (checkResult.error) {
-				if (currentArgument != commands.child) { // don't give error message for root command
-					message.channel.send(`${checkResult.error}: \`${checkResult.input}\`. Expected ${syntax}.`).catch(log);
-				}
-				return;
-			}
-			
-			// add input to inputs list
-			inputs[currentArgument.name] = checkResult.input;
-			
-			// Next command
-			if (checkResult.inputEnd >= 0) {
 				command = command.substring(checkResult.inputEnd).trim();
-			}
-			else {
 				break;
 			}
 		}
+		if (!argument) {
+			return;
+		}
+		commandsThisHour++;
+		
+		// Get the options
+		let inputs = [];
+		if (argument.options) {
+			for (var i = 0; i < argument.options.length; i++) {
 
-		if (!currentArgument.run) {
-			message.channel.send(`You're missing one or more required arguments: \`${currentArgument.getChildSyntax(true, true)}\`.`).catch(log);
+				// No more input?
+				if (command == "") {
+					if (argument.options[i].required) {
+						message.channel.send(`You're missing one or more required arguments: \`${argument.getOptionsSyntax(i, true)}\`.`).catch(log);
+						return;
+					}
+					break;
+				}
+	
+				// Check input
+				let checkResult = argument.options[i].checkInput(command);
+				if (checkResult.error) {
+					message.channel.send(`${checkResult.error}: \`${checkResult.input}\` (at \`${argument.getOptionsSyntax(i, true)}\`).`).catch(log);
+					return;
+				}
+	
+				inputs[i] = checkResult.input;
+				if (checkResult.inputEnd < 0) {
+					command = "";
+				}
+				else {
+					command = command.substring(checkResult.inputEnd).trim();
+				}
+
+				if (argument.options[i].run) {
+					runFunction = argument.options[i].run;
+				}
+			}
+		}
+
+		if (!runFunction) {
+			log("WARNING: no command execution method found.");
+			message.channel.send("It looks like this command has not been implemented yet. Please contact my owner if you think this is an error.");
 			return;
 		}
 		
 		// Run the command
-		commandsThisHour++;
-		let commandResult = currentArgument.run(message, inputs, client);
+		let commandResult = runFunction(message, inputs, client);
 		if (typeof commandResult == "string" && commandResult.length > 0) {
 			message.channel.send(commandResult).catch(log);
 		}

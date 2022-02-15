@@ -3,34 +3,26 @@ const guildprefixes = require("./guildprefixes.js");
 const updates = require("./news.json").updates;
 
 /*
-The commands object stores the syntax and function of all of the bot's commands, as a tree of arguments.
+The commands object stores the syntax and function of all of the bot's commands. It is structured in the same way as Discord's Application Command structure:
+https://discord.com/developers/docs/interactions/application-commands
 
-An argument is represented by either a CommandArgument object, or an array of CommandArgument objects.
-If it is an array, you can use any of the arguments in the list as the argument of your command (like an OR-list of possible inputs).
+A CommandArgument can be the root object, a command, or an option within a command. Command groups are currently unsupported.
+The root object contains other commands in their 'options', and commands can contain an ordered list of options that the user can give values for.
+Options are their own subclass: CommandOption, which can be optional or required. Optional arguments must be at the end of the options list.
 
-Each CommandArgument object has a name, which is what displays as a one-word description of the argument in the syntax.
-Within one branch of the command tree, there should NEVER be multiple arguments with the same name!
+Arguments can have a run function. If the last argument specified by the user is this argument, then this argument's run function will be executed.
+If this is not the last argument specified, but the specified arguments after this don't have a run function, then this argument's run function will be executed instead.
+There must always be an argument containing a run function before the first optional argument, otherwise the command has no functionality if no optional arguments are specified.
 
-There are various types of arguments:
-- command names (you have to copy the name exactly)
-- string (you can fill in whatever text you want)
-- number (you have to fill in a valid number)
-- integer (you have to fill in a valid integer)
-- boolean (true or false)
-- root (not an argument, this is the first node in the tree)
-
-Some arguments have a run function. This function gets executed if this argument was the last one to be specified in the command.
-If instead of a function, there is null, that means that the child of this argument is not optional. This child then must ALWAYS exist.
-If the function does exist, then that means that all child arguments are optional.
-The arguments that get passed into this function are:
+The arguments that get passed into the run function are:
 - Message, the Discord message that triggered this command.
-- Object, lists the inputs of the user, with the keys being the name of the argument that was the user input.
+- Array, lists the values of the options specified by the user, in the same order as listed in the command.
 - Client, the Discord client that received the message.
 */
 
 const types = {
-	root: 0,
 	command: 1,
+	root: 2,
 	string: 3,
 	integer: 4,
 	boolean: 5,
@@ -45,12 +37,16 @@ class CommandArgument {
 		this.description = description;
 	}
 
-	get hasChildren() {
-		return this.child instanceof CommandArgument || Array.isArray(this.child) && this.child.length > 0;
+	get isCommand() {
+		return this.type <= types.root;
 	}
 
-	setChild(child) {
-		this.child = child;
+	get isOptional() {
+		return !(this.isCommand || this.required);
+	}
+
+	setOptions(options) {
+		this.options = options;
 		return this;
 	}
 
@@ -98,7 +94,7 @@ class CommandArgument {
 		}
 
 		// Spaces / new lines
-		else if (this.child) {
+		else {
 			// Find the first space or new line
 			let nextSpace = input.indexOf(' '), nextNewLine = input.indexOf('\n');
 			if (nextSpace < 0) {
@@ -114,9 +110,6 @@ class CommandArgument {
 			if (inputEnd >= 0) {
 				input = input.substring(0, inputEnd);
 			}
-		}
-		else {
-			inputEnd = -1;
 		}
 
 		// Convert inputs
@@ -171,73 +164,90 @@ class CommandArgument {
 		};
 	}
 
-	// Returns the syntax of this argument's child, properly formatted. (If requiredOnly is true, will never return things in square brackets)
-	getChildSyntax(withChildren, requiredOnly) {
-		if (!this.hasChildren) {
+	// Returns the syntax of this argument's options, properly formatted. (If requiredOnly is true, will never return things in square brackets)
+	getOptionsSyntax(fromIndex, requiredOnly) {
+		if (!this.options) {
 			return "";
 		}
-		let syntax = "";
-		let childrenHaveChildren = false;
+		fromIndex = fromIndex || 0;
+		let syntax;
 
-		// Multiple children: loop through them
-		if (Array.isArray(this.child)) {
-			syntax += "(";
-			for (var i = 0; i < this.child.length; i++) {
+		// Command group: list commands as OR-gate
+
+		if (this.type == types.root) {
+			var hasOptions;
+			syntax = "(";
+			for (var i = 0; i < this.options.length; i++) {
 				if (i > 0) {
 					syntax += "|";
 				}
-				if (this.child[i].type == types.command) {
-					syntax += this.child[i].name;
-				}
-				else {
-					syntax += `<${this.child[i].name}>`;
-				}
-				if (this.child[i].child) {
-					childrenHaveChildren = true;
+				syntax += this.options[i].name;
+
+				if (this.options[i].options && !(requiredOnly && this.options[i].options[0].isOptional)) {
+					hasOptions = true;
 				}
 			}
 			syntax += ")";
-		}
 
-		// Single child
-		else if (this.child.type == types.command) {
-			syntax += this.child.name;
+			if (hasOptions) {
+				syntax += " ...";
+			}
+		}
+		
+		// Command; list arguments from start index as param list
+
+		else if (requiredOnly && this.options[fromIndex].isOptional) {
+			syntax = `<${this.options[fromIndex].name}>`
 		}
 		else {
-			syntax += `<${this.child.name}>`;
-		}
-
-		// Add children's syntax if desired
-		if (withChildren) {
-			if (Array.isArray(this.child)) {
-				if (childrenHaveChildren) {
-					syntax += " ...";
+			syntax = "";
+			var bracketsToClose = 0;
+			for (var i = fromIndex; i < this.options.length; i++) {
+				if (requiredOnly && this.options[i].isOptional) {
+					break;
 				}
-			}
-			else if (this.child.hasChildren && (!requiredOnly || this.child.run)) {
-				syntax += " " + this.child.getChildSyntax(true, requiredOnly);
-			}
-		}
 
-		// Optional children
-		if (!requiredOnly && this.run) {
-			syntax = `[${syntax}]`;
+				if (syntax != "") {
+					syntax += " ";
+				}
+				if (this.options[i].isOptional) {
+					syntax += "[";
+					bracketsToClose++;
+				}
+				syntax += `<${this.options[i].name}>`;
+			}
+			while (bracketsToClose --> 0) {
+				syntax += "]";
+			}
 		}
 
 		return syntax;
 	}
 };
 
-// Contains info about all the commands
-const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, null).setChild([
+class CommandOption extends CommandArgument {
+	constructor(type, name, description, isRequired) {
+		super(type, name, description);
+		this.required = isRequired;
+	}
+}
+
+var minesweeperOptions = [
+	new CommandOption(types.integer, "gameWidth", "Amount of squares horizontally.", false),
+	new CommandOption(types.integer, "gameHeight", "Amount of squares vertically.", false),
+	new CommandOption(types.integer, "numMines", "Number of mines in the game.", false),
+	new CommandOption(types.boolean, "dontStartUncovered", "Option to not uncover the first part of the minesweeper field automatically.", false)
+];
+
+const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, null).setOptions([
 
 	new CommandArgument(types.command, "help", "Lists available commands.")
 		.setRunFunction(message => {
 			let prefix = guildprefixes.getPrefix(message.guild);
 			let returnTxt = "";
-			for (var i = 0; i < commands.child.length; i++) {
-				let command = commands.child[i];
-				returnTxt += `\n• \`${prefix}${command.name} ${command.getChildSyntax(true)}\`\n\t\t${command.description}`;
+			for (var i = 0; i < commands.options.length; i++) {
+				let command = commands.options[i];
+				returnTxt += `\n• \`${prefix}${command.name} ${command.getOptionsSyntax()}\`\n\t\t${command.description}`;
 			}
 			if (returnTxt == "") {
 				return "You cannot execute any commands!";
@@ -246,42 +256,25 @@ const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, nu
 		}),
 	
 	new CommandArgument(types.command, "minesweeperraw", "Creates a Minesweeper game and shows the markdown code for copy-pasting.")
-		.setRunFunction((message, inputs) => generateGame(undefined, undefined, undefined, message, true))
-		.setChild(new CommandArgument(types.integer, "gameWidth", "Amount of squares horizontally.")
-			.setChild(new CommandArgument(types.integer, "gameHeight", "Amount of squares vertically.")
-				.setRunFunction((message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message, true))
-				.setChild(new CommandArgument(types.integer, "numMines", "Number of mines in the game.")
-					.setRunFunction((message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true))
-					.setChild(new CommandArgument(types.boolean, "dontStartUncovered", "Option to not uncover the first part of the minesweeper field automatically.")
-						.setRunFunction((message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, true, true))
-					)
-				)
-			)
-		),
+		.setRunFunction((message, inputs) => generateGame(inputs[0], inputs[1], inputs[2], message, true, inputs[3]))
+		.setOptions(minesweeperOptions),
 
-	new CommandArgument(types.command, "msraw", "Alias of the minesweeperraw command."),
+	new CommandArgument(types.command, "msraw", "Alias of the minesweeperraw command.")
+		.setRunFunction((message, inputs) => generateGame(inputs[0], inputs[1], inputs[2], message, true, inputs[3]))
+		.setOptions(minesweeperOptions),
 
 	new CommandArgument(types.command, "minesweeper", "Creates a Minesweeper game for you to play!")
-		.setRunFunction((message, inputs) => generateGame(undefined, undefined, undefined, message))
-		.setChild(new CommandArgument(types.integer, "gameWidth", "Amount of squares horizontally.")
-			.setChild(new CommandArgument(types.integer, "gameHeight", "Amount of squares vertically.")
-				.setRunFunction((message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, undefined, message))
-				.setChild(new CommandArgument(types.integer, "numMines", "Number of mines in the game.")
-					.setRunFunction((message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message))
-					.setChild(new CommandArgument(types.boolean, "dontStartUncovered", "Option to not uncover the first part of the minesweeper field automatically.")
-						.setRunFunction((message, inputs) => generateGame(inputs.gameWidth, inputs.gameHeight, inputs.numMines, message, false, true)
-					)
-				)
-			)
-		)
-	),
+		.setRunFunction((message, inputs) => generateGame(inputs[0], inputs[1], inputs[2], message, false, inputs[3]))
+		.setOptions(minesweeperOptions),
 
-	new CommandArgument(types.command, "ms", "Alias of the minesweeper command."),
+	new CommandArgument(types.command, "ms", "Alias of the minesweeper command.")
+		.setRunFunction((message, inputs) => generateGame(inputs[0], inputs[1], inputs[2], message, false, inputs[3]))
+		.setOptions(minesweeperOptions),
 
 	new CommandArgument(types.command, "info", "Gives info about the bot.")
 		.setRunFunction(message => {
 			let prefix = guildprefixes.getPrefix(message.guild);
-			let minesweeperSyntax = commands.child.find(arg => arg.name == "minesweeper").getChildSyntax(true);
+			let minesweeperSyntax = commands.options.find(arg => arg.name == "minesweeper").getChildSyntax(true);
 
 			return `Hello, I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! To generate a new minesweeper game, use the \`${prefix}minesweeper\` command (or its alias \`${prefix}ms\`):\n\`\`\`\n${prefix}minesweeper ${minesweeperSyntax}\n\`\`\`\`gameWidth\` and \`gameHeight\` tell me how many squares the game should be wide and tall, for a maximum of 40x20. Default is 8x8.\n\`numMines\` is how many mines there should be in the game, the more mines the more difficult it is. If omitted, I will pick a number based on the size of the game.\nWhen you run this command, I will reply with a grid of spoiler tags. Unless you wrote \`dontStartUncovered\`, the first zeroes will have already been opened for you.\n\nIf you don't know how to play Minesweeper, get out of the rock you've been living under and use the \`${prefix}howtoplay\` command. For a list of all commands and their syntaxes, use \`${prefix}help\`.\n\nMy creator is @JochCool#1314 and I'm at version ${package.version}. For those interested, my source code is available on GitHub: ${package.repository}. You can submit bug reports and feature requests there.\nThank you for using me!`;
 		}),
@@ -299,36 +292,31 @@ const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, nu
 		}),
 
 	new CommandArgument(types.command, "setprefix", "Changes the prefix for the bot, if you have Manage Server permissions.") 
-		.setChild(new CommandArgument(types.string, "prefix", "The new prefix for the bot.")
-			.setRunFunction((message, inputs) => {
-				if (!message.guild) {
-					return "The prefix can only be changed in a server, not here.";
-				}
-				if (!message.member.permissions.has("MANAGE_GUILD")) {
-					return "You need the Manage Server permission to change the prefix.";
-				}
-				if (inputs.prefix.length == 0) {
-					return "The prefix must be at least one character long.";
-				}
+		.setOptions([
+			new CommandOption(types.string, "prefix", "The new prefix for the bot.", true)
+				.setRunFunction((message, inputs) => {
+					if (!message.guild) {
+						return "The prefix can only be changed in a server, not here.";
+					}
+					if (!message.member.permissions.has("MANAGE_GUILD")) {
+						return "You need the Manage Server permission to change the prefix.";
+					}
+					if (inputs[0].length == 0) {
+						return "The prefix must be at least one character long.";
+					}
 
-				let prevprefix = guildprefixes.getPrefix(message.guild);
-				if (prevprefix == inputs.prefix) {
-					return "The prefix didn't change.";
-				}
+					let prevprefix = guildprefixes.getPrefix(message.guild);
+					if (prevprefix == inputs[0]) {
+						return "The prefix didn't change.";
+					}
 
-				guildprefixes.setPrefix(message.guild, inputs.prefix);
-				return `The prefix of this server has been changed from \`${prevprefix}\` to \`${inputs.prefix}\`.`;
-			})
-		),
+					guildprefixes.setPrefix(message.guild, inputs[0]);
+					return `The prefix of this server has been changed from \`${prevprefix}\` to \`${inputs[0]}\`.`;
+				})
+		]),
 
 	new CommandArgument(types.command, "ping", "Pong?")
 		.setRunFunction((message, inputs, client) => `pong (${Math.floor(client.ws.ping)}ms heartbeat)`)
 ]);
-
-// cheating here because aliases haven't been implemented yet
-commands.child[2].child = commands.child[1].child;
-commands.child[2].run = commands.child[1].run;
-commands.child[4].child = commands.child[3].child;
-commands.child[4].run = commands.child[3].run;
 
 module.exports = commands;
