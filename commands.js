@@ -301,18 +301,18 @@ const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, nu
 			new CommandOption(types.string, "prefix", "The new prefix for the bot.", true)
 				.setRunFunction((source, inputs) => {
 					if (!source.guild) {
-						return "The prefix can only be changed in a server, not here.";
+						return { content: "The prefix can only be changed in a server, not here.", ephemeral: true };
 					}
 					if (!source.member.permissions.has("MANAGE_GUILD")) {
-						return "You need the Manage Server permission to change the prefix.";
+						return { content: "You need the Manage Server permission to change the prefix.", ephemeral: true };
 					}
 					if (inputs[0].length == 0) {
-						return "The prefix must be at least one character long.";
+						return { content: "The prefix must be at least one character long.", ephemeral: true };
 					}
 
 					let prevprefix = guildprefixes.getPrefix(source.guild);
 					if (prevprefix == inputs[0]) {
-						return "The prefix didn't change.";
+						return { content: "The prefix didn't change.", ephemeral: true };
 					}
 
 					guildprefixes.setPrefix(source.guild, inputs[0]);

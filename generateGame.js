@@ -185,10 +185,5 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, source, 
 	
 	splitReturns.push(returnTxt);
 	
-	// Send the messages one by one
-	let i = 0;
-	function sendNextMessage() {
-		if (i < splitReturns.length) source.channel.send(splitReturns[i++]).then(sendNextMessage, log);
-	};
-	sendNextMessage();
+	return splitReturns;
 };

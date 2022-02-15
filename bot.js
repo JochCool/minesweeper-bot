@@ -139,22 +139,38 @@ client.on('messageCreate', message => {
 	// Commands
 	let prefix = guildprefixes.getPrefix(message.guild);
 	if (message.content.startsWith(prefix) && (!message.guild || message.channel.memberPermissions(message.guild.me).has("SEND_MESSAGES"))) {
-		let result = executeCommand(message, message.content.substring(prefix.length).trim()).content;
-
-		if (typeof result == "string" && result.length > 0) {
-			message.channel.send(result);
-		}
+		respondToCommand(message, message.content.substring(prefix.length).trim());
 	}
 });
 
 client.on('interactionCreate', interaction => {
-	if (!interaction.isCommand()) {
-		return;
+	if (interaction.isCommand()) {
+		respondToCommand(interaction, interaction.commandName, interaction.options);
 	}
-	interaction.reply(executeCommand(interaction, interaction.commandName, interaction.options));
-})
+});
 
 // For text commands, 'command' will be the whole command, for interactions it'll be only the command name and 'options' contains the rest.
+async function respondToCommand(source, command, options) {
+	let result = executeCommand(source, command, options);
+	if (Array.isArray(result)) {
+		if (result.length == 0) {
+			return;
+		}
+		try {
+			await source.reply(result[0]);
+			for (var i = 1; i < result.length; i++) {
+				await source.channel.send(result[i]);
+			}
+		}
+		catch (err) {
+			log(err);
+		}
+	}
+	else {
+		source.reply(result).catch(log);
+	}
+}
+
 function executeCommand(source, command, options) {
 	try {
 		//log("Executing command: "+command);
@@ -235,7 +251,7 @@ function executeCommand(source, command, options) {
 		}
 		
 		// Run the command
-		return { content: runFunction(source, inputs, client) };
+		return runFunction(source, inputs, client);
 	}
 	catch (err) {
 		log(err);
