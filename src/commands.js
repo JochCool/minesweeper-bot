@@ -1,7 +1,7 @@
 const generateGame = require("./generateGame.js");
 const guildprefixes = require("./guildprefixes.js");
-const updates = require("./news.json").updates;
-const package = require("./package.json");
+const updates = require("../news.json").updates;
+const package = require("../package.json");
 
 /*
 The commands object stores the syntax and function of all of the bot's commands. It is structured in the same way as Discord's Application Command structure:

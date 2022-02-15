@@ -5,7 +5,7 @@
 	"author": "JochCool",
 	"main": "bot.js",
 	"files": [
-		"bot.js",
+		"src/*.js",
 		"auth.json",
 		"guildprefixes.json",
 		"news.json"

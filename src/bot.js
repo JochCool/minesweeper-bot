@@ -2,7 +2,7 @@
 // What you're probably looking for is the generateGame.js file, which contains the actually minesweeper-related code.
 // This code manages the bot's connection and interprets commands.
 
-const package = require("./package.json");
+const package = require("../package.json");
 const log = require("./log.js");
 
 log(`Starting Minesweeper Bot version ${package.version}`);

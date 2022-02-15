@@ -40,6 +40,6 @@ If you want to try my code out or run me on a private bot, that is allowed, as l
 4. Download and install [NodeJS](https://nodejs.org).
 5. Open the command line and navigate to the folder in which you unzipped the repo at step 2 (using the `cd` command). Then type `npm install discord.js @discordjs/rest`.
 6. To register the slash commands, type `node setup.js <id>`, and where it says `<id>` paste the application ID from step 1. Note that it may take up to an hour before the commands appear.
-7. Run `node bot.js` to get me online. Have fun!
+7. Run `node ./` to get me online. Have fun!
 
 If you encounter an error, please [open an issue](https://github.com/JochCool/minesweeper-bot/issues) and my creator will take a look.

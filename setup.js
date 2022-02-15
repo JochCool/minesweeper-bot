@@ -3,7 +3,7 @@
 // Also has an optional command line argument for the guild to register the commands in
 // Setting the third command line argument to "delete" will instead make this program delete all registered commands, rather than registering new ones.
 
-const log = require("./log.js");
+const log = require("./src/log.js");
 
 if (!process.argv[2]) {
 	log("Please specify the application ID of your Discord bot as a command line argument (can be found at https://discordapp.com/developers/applications)");
@@ -42,7 +42,7 @@ if (process.argv[4] == "delete") {
 	}, log);
 }
 else {
-	const commands = require("./commands.js");
+	const commands = require("./src/commands.js");
 
 	const list = commands.options.filter(command => !command.isTextOnly);
 
