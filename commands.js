@@ -246,7 +246,12 @@ const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, nu
 			let returnTxt = "";
 			for (var i = 0; i < commands.options.length; i++) {
 				let command = commands.options[i];
-				returnTxt += `\n• \`${prefix}${command.name} ${command.getOptionsSyntax()}\`\n\t\t${command.description}`;
+				let syntax = prefix + command.name;
+				let optionsSyntax = command.getOptionsSyntax();
+				if (optionsSyntax != "") {
+					syntax += " " + optionsSyntax;
+				}
+				returnTxt += `\n• \`${syntax}\`\n\t\t${command.description}`;
 			}
 			if (returnTxt == "") {
 				return "You cannot execute any commands!";
