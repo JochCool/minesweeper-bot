@@ -119,12 +119,6 @@ class CommandArgument {
 
 		// Convert inputs
 		if (this.type == types.boolean) {
-			if (input.startsWith("true") || input.startsWith("yes") || input.startsWith(this.name)) {
-				return {
-					input: true,
-					inputEnd: inputEnd < 0 ? 4 : inputEnd
-				};
-			}
 			if (input.startsWith("false") || input.startsWith("no")) {
 				return {
 					input: false,
@@ -132,8 +126,8 @@ class CommandArgument {
 				};
 			}
 			return {
-				input: input,
-				error: "Must be true or false"
+				input: true,
+				inputEnd: inputEnd < 0 ? 4 : inputEnd
 			};
 		}
 		if (this.type == types.number || this.type == types.integer) {
