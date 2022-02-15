@@ -1,6 +1,7 @@
 const generateGame = require("./generateGame.js");
 const guildprefixes = require("./guildprefixes.js");
 const updates = require("./news.json").updates;
+const package = require("./package.json");
 
 /*
 The commands object stores the syntax and function of all of the bot's commands. It is structured in the same way as Discord's Application Command structure:
@@ -278,7 +279,7 @@ const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, nu
 	new CommandArgument(types.command, "info", "Gives info about the bot.")
 		.setRunFunction(source => {
 			let prefix = guildprefixes.getPrefix(source.guild);
-			let minesweeperSyntax = commands.options.find(arg => arg.name == "minesweeper").getChildSyntax(true);
+			let minesweeperSyntax = commands.options.find(arg => arg.name == "minesweeper").getOptionsSyntax();
 
 			return `Hello, I'm a bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! To generate a new minesweeper game, use the \`${prefix}minesweeper\` command (or its alias \`${prefix}ms\`):\n\`\`\`\n${prefix}minesweeper ${minesweeperSyntax}\n\`\`\`\`gameWidth\` and \`gameHeight\` tell me how many squares the game should be wide and tall, for a maximum of 40x20. Default is 8x8.\n\`numMines\` is how many mines there should be in the game, the more mines the more difficult it is. If omitted, I will pick a number based on the size of the game.\nWhen you run this command, I will reply with a grid of spoiler tags. Unless you wrote \`dontStartUncovered\`, the first zeroes will have already been opened for you.\n\nIf you don't know how to play Minesweeper, get out of the rock you've been living under and use the \`${prefix}howtoplay\` command. For a list of all commands and their syntaxes, use \`${prefix}help\`.\n\nMy creator is @JochCool#1314 and I'm at version ${package.version}. For those interested, my source code is available on GitHub: ${package.repository}. You can submit bug reports and feature requests there.\nThank you for using me!`;
 		}),
