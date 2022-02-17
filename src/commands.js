@@ -1,6 +1,6 @@
 const generateGame = require("./generateGame.js");
 const guildprefixes = require("./guildprefixes.js");
-const updates = require("../news.json").updates;
+const updates = require("../news.json");
 const package = require("../package.json");
 
 /*
