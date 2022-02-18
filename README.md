@@ -3,6 +3,8 @@ Hello! I'm a verified Discord bot that can generate a random Minesweeper game us
 
 I listen to both [slash commands](https://support.discord.com/hc/en-us/articles/1500000368501-Slash-Commands-FAQ) and text commands (simply typing in chat). For text commands, the default command prefix is `!`, but this can be changed (see below). Note that in April of 2022, Discord will no longer allow text commands and you will have to start using slash commands.
 
+[Click here to invite the bot](https://discord.com/api/oauth2/authorize?client_id=540917634695168010&scope=applications.commands%20bot). To execute text commands, the bot will need "View Channel" and "Send Messages" permissions; this is not necessary for slash commands.
+
 ## The Minesweeper Command
 The `/minesweeper` command works like this:
 ```
@@ -40,7 +42,7 @@ If you want to try my code out or run me on a private bot, that is allowed, as l
 3. Open the file "auth.json" and on the second line of that file (where it says `"bottoken": "CENSORED"`), replace the word `CENSORED` with the token from step 1. You can ignore the `"topggtoken"`.
 4. Download and install [NodeJS](https://nodejs.org).
 5. Open the command line and navigate to the folder in which you unzipped the repo at step 2 (using the `cd` command). Then type `npm install discord.js @discordjs/rest`.
-6. To register the slash commands, type `node setup.js <id>`, and where it says `<id>` paste the application ID from step 1. Note that it may take up to an hour before the commands appear.
+6. To register the slash commands (optional), type `node setup.js <id>`, and where it says `<id>` paste the application ID from step 1. Note that it may take up to an hour before the commands appear.
 7. Run `node ./` to get me online. Have fun!
 
 If you encounter an error, please [open an issue](https://github.com/JochCool/minesweeper-bot/issues) and my creator will take a look.
