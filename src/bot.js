@@ -152,6 +152,9 @@ client.on('interactionCreate', interaction => {
 // For text commands, 'command' will be the whole command, for interactions it'll be only the command name and 'options' contains the rest.
 async function respondToCommand(source, command, options) {
 	let result = executeCommand(source, command, options);
+	if (!result) {
+		return;
+	}
 	if (Array.isArray(result)) {
 		if (result.length == 0) {
 			return;
