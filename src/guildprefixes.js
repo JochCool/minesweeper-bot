@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const filePath = "../guildprefixes.json";
 
 class PrefixManager {
 
@@ -9,7 +10,7 @@ class PrefixManager {
 
 	get prefixes() {
 		if (!this._prefixes) {
-			this._prefixes = require("./guildprefixes.json");
+			this._prefixes = require(filePath);
 		}
 		return this._prefixes;
 	}
@@ -30,7 +31,7 @@ class PrefixManager {
 	setPrefix(guild, prefix) {
 		let prefixes = this.prefixes;
 		prefixes[guild.id] = prefix;
-		fs.writeFile(path.resolve(__dirname, "guildprefixes.json"), JSON.stringify(prefixes, null, 4), err => { if (err) { log(err); } });
+		fs.writeFile(path.resolve(__dirname, filePath), JSON.stringify(prefixes, null, 4), err => { if (err) { log(err); } });
 	}
 }
 

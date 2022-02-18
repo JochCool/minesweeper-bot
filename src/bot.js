@@ -12,7 +12,7 @@ log(`Starting Minesweeper Bot version ${package.version}`);
 
 // Load everything
 const Discord = require("discord.js");
-const auth = require("./auth.json");
+const auth = require("../auth.json");
 const commands = require("./commands.js");
 const guildprefixes = require("./guildprefixes.js");
 
