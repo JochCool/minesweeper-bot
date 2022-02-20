@@ -6,7 +6,7 @@ const neighbourLocations = [{x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1}, {x: 1,
 const numberEmoji = [":zero:", ":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":nine:"];
 
 // Returns the text that the bot should reply with based on the given inputs.
-module.exports = function generateGame(gameWidth, gameHeight, numMines, source, isRaw, startsNotUncovered) {
+module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, startsNotUncovered) {
 	
 	/** ──────── CHECKS ──────── **/
 	

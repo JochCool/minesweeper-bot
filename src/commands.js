@@ -260,19 +260,19 @@ const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, nu
 		}),
 	
 	new CommandArgument(types.command, "minesweeperraw", "Creates a Minesweeper game and shows the markdown code for copy-pasting.")
-		.setRunFunction((source, inputs) => generateGame(inputs[0], inputs[1], inputs[2], source, true, inputs[3]))
+		.setRunFunction((source, inputs) => generateGame(inputs[0], inputs[1], inputs[2], true, inputs[3]))
 		.setOptions(minesweeperOptions),
 
 	new CommandArgument(types.command, "msraw", "Alias of the minesweeperraw command.", true)
-		.setRunFunction((source, inputs) => generateGame(inputs[0], inputs[1], inputs[2], source, true, inputs[3]))
+		.setRunFunction((source, inputs) => generateGame(inputs[0], inputs[1], inputs[2], true, inputs[3]))
 		.setOptions(minesweeperOptions),
 
 	new CommandArgument(types.command, "minesweeper", "Creates a Minesweeper game for you to play!")
-		.setRunFunction((source, inputs) => generateGame(inputs[0], inputs[1], inputs[2], source, false, inputs[3]))
+		.setRunFunction((source, inputs) => generateGame(inputs[0], inputs[1], inputs[2], false, inputs[3]))
 		.setOptions(minesweeperOptions),
 
 	new CommandArgument(types.command, "ms", "Alias of the minesweeper command.", true)
-		.setRunFunction((source, inputs) => generateGame(inputs[0], inputs[1], inputs[2], source, false, inputs[3]))
+		.setRunFunction((source, inputs) => generateGame(inputs[0], inputs[1], inputs[2], false, inputs[3]))
 		.setOptions(minesweeperOptions),
 
 	new CommandArgument(types.command, "info", "Gives info about the bot.")
