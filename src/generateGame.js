@@ -33,7 +33,7 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 			return "You think you can look clever by solving a Minesweeper game without mines? Not gonna happen my friend.";
 		}
 		else if (numMines > gameWidth * gameHeight) {
-			return "I can't fit that many mines in this game!";
+			return `I can't fit that many mines in a game sized ${gameWidth}x${gameHeight}!`;
 		}
 	}
 	
