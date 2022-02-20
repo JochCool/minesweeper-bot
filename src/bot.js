@@ -155,6 +155,7 @@ async function respondToCommand(source, command, options) {
 	if (!result) {
 		return;
 	}
+	commandsThisHour++;
 	if (Array.isArray(result)) {
 		if (result.length == 0) {
 			return;
@@ -205,7 +206,6 @@ function executeCommand(source, command, options) {
 		if (!argument) {
 			return;
 		}
-		commandsThisHour++;
 		
 		// Get the options
 		let inputs = [];
@@ -266,7 +266,6 @@ function executeCommand(source, command, options) {
 	}
 	catch (err) {
 		log(err);
-		commandsThisHour++;
 		return { content: "An unknown error occurred while evaluating your command.", ephemeral: true };
 	}
 };
