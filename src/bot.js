@@ -131,14 +131,26 @@ client.on("guildDelete", guild => {
 
 client.on('messageCreate', message => {
 	
-	// Don't parse if
-	if (message.guild && !message.guild.available || message.author.bot) {
+	if (message.author.bot) {
 		return;
+	}
+	if (message.guild) {
+		if (!message.guild.available) {
+			return;
+		}
+		let permissions = message.channel.memberPermissions(message.guild.me);
+		if (!permissions.has("SEND_MESSAGES")) {
+			return;
+		}
+		if (!permissions.has("READ_MESSAGE_HISTORY")) {
+			// Replying isn't allowed without this permission; send a regular message instead
+			message.reply = content => message.channel.send(content);
+		}
 	}
 	
 	// Commands
 	let prefix = guildprefixes.getPrefix(message.guild);
-	if (message.content.startsWith(prefix) && (!message.guild || message.channel.memberPermissions(message.guild.me).has("SEND_MESSAGES"))) {
+	if (message.content.startsWith(prefix)) {
 		respondToCommand(message, message.content.substring(prefix.length).trim());
 	}
 });
