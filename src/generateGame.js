@@ -10,31 +10,45 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 	
 	/** ──────── CHECKS ──────── **/
 	
-	// Check game size
+	// Check game size and construct error message if needed
+	let tooSmall;
+	let tooLarge;
 	if (isNaN(gameWidth)) {
 		gameWidth = isNaN(gameHeight) ? 8 : gameHeight;
 	}
-	else if (gameWidth <= 0 || gameHeight <= 0) {
-		return `Uh, I'm not smart enough to generate a maze sized ${gameWidth} by ${gameHeight}. I can only use positive numbers. Sorry :cry:`;
+	else if (gameWidth <= 0) {
+		tooSmall = gameWidth + " squares wide";
+	}
+	else if (gameWidth > 40) {
+		tooLarge = "wide";
 	}
 	if (isNaN(gameHeight)) {
 		gameHeight = gameWidth;
 	}
-	else if (gameWidth > 40 || gameHeight > 20) {
-		return "That's way too large! Think of all the mobile users who are going to see this!";
+	else if (gameHeight <= 0) {
+		if (tooSmall) tooSmall = `sized ${gameWidth} by ${gameHeight}`;
+		else          tooSmall = gameHeight + " squares high";
+	}
+	else if (gameHeight > 20) {
+		if (tooLarge) tooLarge = "large";
+		else          tooLarge = "tall";
+	}
+	if (tooSmall) {
+		return `Uh, I'm not smart enough to generate a game ${tooSmall}. I can only use positive numbers. Sorry :cry:`;
+	}
+	if (tooLarge) {
+		return `That's way too ${tooLarge}! Think of all the mobile users who are going to see this!`;
 	}
 	
 	// Check mine count
 	if (isNaN(numMines)) {
 		numMines = Math.round(gameWidth * gameHeight / 5);
 	}
-	else {
-		if (numMines <= 0) {
-			return "You think you can look clever by solving a Minesweeper game without mines? Not gonna happen my friend.";
-		}
-		else if (numMines > gameWidth * gameHeight) {
-			return `I can't fit that many mines in a game sized ${gameWidth}x${gameHeight}!`;
-		}
+	else if (numMines <= 0) {
+		return "You think you can look clever by solving a Minesweeper game without mines? Not gonna happen my friend.";
+	}
+	else if (numMines > gameWidth * gameHeight) {
+		return `I can't fit that many mines in a game sized ${gameWidth}x${gameHeight}!`;
 	}
 	
 	/** ──────── CREATE GAME ──────── **/
