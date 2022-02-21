@@ -24,7 +24,7 @@ if (!auth.bottoken || auth.bottoken == "CENSORED") {
 	process.exit();
 }
 
-// Initialise Discord Bot
+// Initialise Discord bot
 const client = new Discord.Client({
 	intents: [
 		"GUILDS",
@@ -32,11 +32,15 @@ const client = new Discord.Client({
 		"DIRECT_MESSAGES"
 	],
 
+	partials: ["CHANNEL"],
+
 	presence: {
-		activity: {
-			type: "PLAYING",
-			name: "!minesweeper"
-		}
+		activities: [
+			{
+				type: "PLAYING",
+				name: "minesweeper"
+			}
+		]
 	},
 
 	makeCache: Discord.Options.cacheWithLimits({
