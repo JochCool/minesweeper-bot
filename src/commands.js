@@ -229,12 +229,22 @@ class CommandOption extends CommandArgument {
 		super(type, name, description);
 		this.required = isRequired;
 	}
+
+	// Note: Min and max values are not enforced in text commands right now, only in slash commands by Discord.
+	setMinValue(value) {
+		this.min_value = value;
+		return this;
+	}
+	setMaxValue(value) {
+		this.max_value = value;
+		return this;
+	}
 }
 
 var minesweeperOptions = [
-	new CommandOption(types.integer, "game-width", "Amount of squares horizontally.", false),
-	new CommandOption(types.integer, "game-height", "Amount of squares vertically.", false),
-	new CommandOption(types.integer, "num-mines", "Number of mines in the game.", false),
+	new CommandOption(types.integer, "game-width", "Amount of squares horizontally.", false).setMinValue(1).setMaxValue(40),
+	new CommandOption(types.integer, "game-height", "Amount of squares vertically.", false).setMinValue(1).setMaxValue(20),
+	new CommandOption(types.integer, "num-mines", "Number of mines in the game.", false).setMinValue(1).setMaxValue(40*20),
 	new CommandOption(types.boolean, "dont-start-uncovered", "Option to not uncover the first part of the minesweeper field automatically.", false)
 ];
 
