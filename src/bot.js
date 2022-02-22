@@ -64,10 +64,12 @@ function getGuildCount() {
 };
 
 // setup for hourly reports in the log
+var messagesThisHour = 0;
 var commandsThisHour = 0;
 var reconnectsThisHour = 0;
 function report() {
-	log(`Hourly report: ${commandsThisHour} commands, ${reconnectsThisHour} reconnects.`);
+	log(`Hourly report: ${messagesThisHour} messages, ${commandsThisHour} commands, ${reconnectsThisHour} reconnects.`);
+	messagesThisHour = 0;
 	commandsThisHour = 0;
 	reconnectsThisHour = 0;
 	setTimeout(report, getTimeUntilNextHour());
@@ -138,6 +140,7 @@ client.on('messageCreate', message => {
 	if (message.author.bot) {
 		return;
 	}
+	messagesThisHour++;
 	if (message.guild) {
 		if (!message.guild.available) {
 			return;
