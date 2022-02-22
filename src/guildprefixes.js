@@ -30,6 +30,7 @@ class PrefixManager {
 
 	setPrefix(guild, prefix) {
 		let prefixes = this.prefixes;
+		prefixes.saved = new Date();
 		prefixes[guild.id] = prefix;
 		fs.writeFile(path.resolve(__dirname, filePath), JSON.stringify(prefixes, null, 4), err => { if (err) { log(err); } });
 	}
