@@ -142,7 +142,7 @@ client.on('messageCreate', message => {
 		if (!message.guild.available) {
 			return;
 		}
-		let permissions = message.channel.memberPermissions(message.guild.me);
+		let permissions = message.channel.permissionsFor(message.guild.me);
 		if (!permissions.has("SEND_MESSAGES")) {
 			return;
 		}
