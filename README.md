@@ -29,10 +29,18 @@ The following are text commands only:
 * `/ms` — alias of `/minesweeper`.
 * `/msraw` — alias of `/minesweeperraw`.
 
-## Other info
-My creator is @JochCool#1314. If you have any questions or other remarks, you can DM him, create an issue on Discord, or join my Discord support server: https://discord.gg/PCxZrrZ.
+## Q&A
+### I have gone offline and am not responding to any commands!
+Oh no! Please ping my creator so he can revive me (see the [contact](#Contact) section)!
 
-Note: sometimes you might not get a response from me when you run a command. Then that's probably because I'm temporarily offline, in which case please ping JochCool so he can fix it.
+### There are no slash commands!
+This may be because I don't have permissions to add slash commands to your server; to fix this you must re-invite me using the link above. Also, verify that you have the "Use Application Commands" permission in the server. In any case, you should be able to use slash commands in a DM with me.
+
+### Some spoiler tags are missing in large games!
+That's Discord's fault, not mine. (See issue [#24](https://github.com/JochCool/minesweeper-bot/issues/24) on GitHub.)
+
+## Contact
+My creator is @JochCool#1314. If you have any questions or other remarks, you can DM him, create an issue on GitHub, or join my Discord support server: https://discord.gg/PCxZrrZ.
 
 ## Installation
 If you want to try my code out or run me on a private bot, that is allowed, as long as you remember that the code is published under an MIT license. This means that you must include the LICENSE file every time you distribute the code.
