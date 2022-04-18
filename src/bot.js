@@ -169,14 +169,22 @@ client.on('interactionCreate', interaction => {
 });
 
 // For text commands, 'command' will be the whole command, for interactions it'll be only the command name and 'options' contains the rest.
+// 'source' needs to be anything with a .reply(message) function and .channel property.
 async function respondToCommand(source, command, options) {
 	let result = executeCommand(source, command, options);
 	if (!result) {
 		return;
 	}
 	commandsThisHour++;
+
+	// Multiple messages: the first one is a reply, the rest is regular messages.
 	if (Array.isArray(result)) {
 		if (result.length == 0) {
+			return;
+		}
+		// Check if the regular messages can be sent
+		if (result.length > 1 && source.guild && !source.channel.permissionsFor(source.guild.me).has("SEND_MESSAGES")) {
+			source.reply("The response exceeds Discord's character limit.").catch(log);
 			return;
 		}
 		try {
