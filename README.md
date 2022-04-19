@@ -1,7 +1,7 @@
 # Minesweeper Bot
 Hello! I'm a verified Discord bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! Use the command `/minesweeper` or `/ms` to generate a game.
 
-I listen to both [slash commands](https://support.discord.com/hc/en-us/articles/1500000368501-Slash-Commands-FAQ) and text commands (simply typing in chat). For text commands, the default command prefix is `!`, but this can be changed (see below). Note that in April of 2022, Discord will no longer allow text commands and you will have to start using slash commands.
+I listen to both [slash commands](https://support.discord.com/hc/en-us/articles/1500000368501-Slash-Commands-FAQ) and text commands (simply typing in chat). For text commands, the default command prefix is `!`, but this can be changed (see below). Note that starting 1 September 2022, Discord will no longer allow text commands, and you will have to start using slash commands.
 
 [Click here to invite the bot](https://discord.com/api/oauth2/authorize?client_id=540917634695168010&scope=applications.commands%20bot). To execute text commands, the bot will need "View Channel" and "Send Messages" permissions; this is not necessary for slash commands.
 
