@@ -10,9 +10,10 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 	
 	/** ──────── CHECKS ──────── **/
 	
-	// Check game size and construct error message if needed
+	// Check game size, and construct error message if needed
 	let tooSmall;
 	let tooLarge;
+
 	if (isNaN(gameWidth)) {
 		gameWidth = isNaN(gameHeight) ? 8 : gameHeight;
 	}
@@ -22,6 +23,7 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 	else if (gameWidth > 40) {
 		tooLarge = "wide";
 	}
+
 	if (isNaN(gameHeight)) {
 		gameHeight = gameWidth;
 	}
@@ -33,6 +35,7 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 		if (tooLarge) tooLarge = "large";
 		else          tooLarge = "tall";
 	}
+
 	if (tooSmall) {
 		return `Uh, I'm not smart enough to generate a game ${tooSmall}. I can only use positive numbers. Sorry :cry:`;
 	}
@@ -53,7 +56,7 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 	
 	/** ──────── CREATE GAME ──────── **/
 	
-	// 2D array that contains the game, sorted [y][x]. -1 means a mine, positive number is the amount of neighbouring mines
+	// 2D array that contains the game, sorted [y][x]. -1 means a mine, positive number is the amount of neighbouring mines.
 	var game = [];
 	
 	// Initialise the game array with zeroes
@@ -83,24 +86,14 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 		
 		game[y][x] = -1;
 		
-		// Add 1 to neighbouring tiles
+		// Add 1 to all neighbouring tiles
 		for (var j = 0; j < neighbourLocations.length; j++) {
-			let newCoord = {x: x + neighbourLocations[j].x, y: y + neighbourLocations[j].y};
-			if (coordIsInGame(newCoord) && game[newCoord.y][newCoord.x] !== -1) {
-				game[newCoord.y][newCoord.x]++;
+			let newX = x + neighbourLocations[j].x;
+			let newY = y + neighbourLocations[j].y;
+			if (coordIsInGame(newCoord) && game[newY][newX] !== -1) {
+				game[newY][newX]++;
 			}
 		}
-		
-		/* Old code (easier to understand):
-		if (x > 0                && y > 0             && game[y-1][x-1] !== -1) { game[y-1][x-1]++; }
-		if (                        y > 0             && game[y-1][x  ] !== -1) { game[y-1][x  ]++; }
-		if (x < game[y].length-1 && y > 0             && game[y-1][x+1] !== -1) { game[y-1][x+1]++; }
-		if (x < game[y].length-1                      && game[y  ][x+1] !== -1) { game[y  ][x+1]++; }
-		if (x < game[y].length-1 && y < game.length-1 && game[y+1][x+1] !== -1) { game[y+1][x+1]++; }
-		if (                        y < game.length-1 && game[y+1][x  ] !== -1) { game[y+1][x  ]++; }
-		if (x > 0                && y < game.length-1 && game[y+1][x-1] !== -1) { game[y+1][x-1]++; }
-		if (x > 0                                     && game[y  ][x-1] !== -1) { game[y  ][x-1]++; }
-		//*/
 	}
 	
 	/** ──────── UNCOVERING ──────── **/
@@ -155,7 +148,7 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 	if (numMines === 1) returnTxt = `Here's a board sized ${gameWidth}x${gameHeight} with 1 mine:`;
 	else                returnTxt = `Here's a board sized ${gameWidth}x${gameHeight} with ${numMines} mines:`;
 	
-	if (isRaw) { returnTxt += "\n```"; }
+	if (isRaw) returnTxt += "\n```";
 	
 	for (var y = 0; y < game.length; y++) {
 		returnTxt += "\n"

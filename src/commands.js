@@ -60,8 +60,7 @@ class CommandArgument {
 		return this;
 	}
 
-	// Returns whether or not the first input in the command string is a valid input for this argument
-	// Checks if the first input in the command string is a valid input for this argument. If so, returns the parsed input and where in the string it ends. If not, returns null.
+	// Checks if the first input in the command string is a valid input for this argument. If so, returns the parsed input and where in the string it ends. If not, returns an error message.
 	checkInput(input) {
 		if (input == "") {
 			return {
@@ -163,7 +162,7 @@ class CommandArgument {
 		};
 	}
 
-	// Returns the syntax of this argument's options, properly formatted. (If requiredOnly is true, will never return things in square brackets)
+	// Returns the syntax of this argument's options, properly formatted. (If requiredOnly is true, will never return things in square brackets.)
 	getOptionsSyntax(fromIndex, requiredOnly) {
 		if (!this.options) {
 			return "";
@@ -196,7 +195,7 @@ class CommandArgument {
 		// Command; list arguments from start index as param list
 
 		else if (requiredOnly && this.options[fromIndex].isOptional) {
-			syntax = `<${this.options[fromIndex].name}>`
+			syntax = `<${this.options[fromIndex].name}>`;
 		}
 		else {
 			syntax = "";
@@ -299,7 +298,7 @@ const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, nu
 		.setRunFunction(() => {
 			let returnTxt = "These were my past three updates:\n";
 			for (var i = 0; i < 3 && i < updates.length; i++) {
-				returnTxt += `\nVersion ${updates[i].name} \u2015 ${updates[i].description}`; // U+2015 = horizontal bar
+				returnTxt += `\nVersion ${updates[i].name} \u2013 ${updates[i].description}`; // U+2015 = en dash
 			}
 			return returnTxt;
 		}),

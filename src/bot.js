@@ -1,6 +1,6 @@
 // Welcome to the Minesweeper Bot source code!
 // What you're probably looking for is the generateGame.js file, which contains the actually minesweeper-related code.
-// This code manages the bot's connection and interprets commands.
+// The code in this file manages the bot's connection and interprets commands.
 
 const package = require("../package.json");
 const log = require("./log.js");
@@ -8,7 +8,7 @@ const log = require("./log.js");
 log(`Starting Minesweeper Bot version ${package.version}`);
 
 /** ───── BECOME A DISCORD BOT ───── **/
-// This section is to load the modules, initialise the bot and create some general functions
+// This section is to load the modules, initialise the bot and create some general functions.
 
 // Load everything
 const Discord = require("discord.js");
@@ -20,8 +20,8 @@ log("All modules loaded");
 
 // Censored bot token?
 if (!auth.bottoken || auth.bottoken == "CENSORED") {
-	log("Please fill in the token of your Discord Bot (can be found at https://discordapp.com/developers/applications).");
-	process.exit();
+	log("Please fill in the token of your Discord bot (can be found at https://discordapp.com/developers/applications).");
+	return;
 }
 
 // Initialise Discord bot
@@ -38,7 +38,7 @@ const client = new Discord.Client({
 		activities: [
 			{
 				type: "PLAYING",
-				name: "minesweeper"
+				name: "Minesweeper"
 			}
 		]
 	},
@@ -74,7 +74,6 @@ function report() {
 	reconnectsThisHour = 0;
 	setTimeout(report, getTimeUntilNextHour());
 };
-// This function appears to work but time is weird and hard to test so if there is an oversight please tell me
 function getTimeUntilNextHour() {
 	let now = new Date();
 	return (59 - now.getMinutes())*60000 + (60 - now.getSeconds())*1000;
@@ -83,7 +82,6 @@ function getTimeUntilNextHour() {
 setTimeout(report, getTimeUntilNextHour());
 
 // Misc event handlers
-// IMPORTANT: WHEN ADDING EVENTS, DO NOT FORGET TO ALSO CHECK THE GATEWAY INTENTS IN THE CLIENT CONSTRUCTOR
 
 client.on("ready", () => {
 	log(`Ready! Current guild count: ${getGuildCount()}`);
@@ -95,15 +93,8 @@ client.on("disconnected", event => {
 });
 
 client.on("reconnecting", () => {
-	//log("Reconnecting...");
 	reconnectsThisHour++;
 });
-
-/*
-client.on("resume", replayed => {
-	log(`Resumed! Replayed ${replayed} events.`);
-});
-//*/
 
 client.on("ratelimit", info => {
 	log("Being ratelimited! Info:");
@@ -133,14 +124,15 @@ client.on("guildDelete", guild => {
 });
 
 /** ───── COMMAND PARSER ───── **/
-// This section is to evaluate your commands and reply to your commands
+// This section is to evaluate your commands and reply to your commands.
 
 client.on('messageCreate', message => {
-	
 	if (message.author.bot) {
 		return;
 	}
+
 	messagesThisHour++;
+
 	if (message.guild) {
 		if (!message.guild.available) {
 			return;
@@ -150,7 +142,7 @@ client.on('messageCreate', message => {
 			return;
 		}
 		if (!permissions.has("READ_MESSAGE_HISTORY")) {
-			// Replying isn't allowed without this permission; send a regular message instead
+			// Replying isn't allowed without this permission; send a regular message instead.
 			message.reply = content => message.channel.send(content);
 		}
 	}

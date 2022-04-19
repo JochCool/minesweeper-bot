@@ -1,7 +1,8 @@
-// Registers application commands
-// Has a required command line argument for the bot's client ID
-// Also has an optional command line argument for the guild to register the commands in
-// Setting the third command line argument to "delete" will instead make this program delete all registered commands, rather than registering new ones.
+// This script registers the bot's application commands.
+// Command line arguments:
+// 1. The ID of the bot (required).
+// 2. The ID of the guild to register the commands in; nothing/empty to register commands globally.
+// 3. Set this to "delete" to instead delete all registered commands, rather than registering new ones.
 
 const log = require("./src/log.js");
 
@@ -13,7 +14,7 @@ if (!process.argv[2]) {
 const auth = require("./auth.json");
 
 if (!auth.bottoken || auth.bottoken == "CENSORED") {
-	log("Please fill in the token of your Discord Bot (can be found at https://discordapp.com/developers/applications).");
+	log("Please fill in the token of your Discord bot (can be found at https://discordapp.com/developers/applications).");
 	return;
 }
 
@@ -35,8 +36,7 @@ if (process.argv[4] == "delete") {
 	rest.get(path).then(response => {
 		log(response.length + " commands found to delete.");
 		for (var i = 0; i < response.length; i++) {
-			let id = response[i].id;
-			let name = response[i].name;
+			let { id, name } = response[i];
 			rest.delete(`${path}/${id}`).then(() => log(`Deleted command ${id} (${name})`), log);
 		}
 	}, log);
@@ -46,13 +46,13 @@ else {
 
 	const list = commands.options.filter(command => !command.isTextOnly);
 
-	log(`All modules loaded; registering ${list.length} commands.`)
+	log(`All modules loaded; registering ${list.length} commands.`);
 
 	rest.put(path, { body: list }).then(
 		response => {
 			log("Success! Registered commands:");
 			for (var i = 0; i < response.length; i++) {
-				log(`/${response[i].name} (id ${response[i].id}, version ${response[i].version})`)
+				log(`/${response[i].name} (id ${response[i].id}, version ${response[i].version})`);
 			}
 		},
 		error => {
