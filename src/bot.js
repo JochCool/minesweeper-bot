@@ -52,7 +52,7 @@ const client = new Discord.Client({
 client.login(auth.bottoken).catch(log);
 
 // Initalise connetion with the Top.gg API
-if (auth.dbltoken && auth.topggtoken != "CENSORED") {
+if (auth.topggtoken && auth.topggtoken != "CENSORED") {
 	require("topgg-autoposter").AutoPoster(auth.topggtoken, client).on("error", log);
 }
 else {
