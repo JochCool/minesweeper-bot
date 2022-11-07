@@ -5,7 +5,7 @@ In servers, you can only use [slash commands](https://support.discord.com/hc/en-
 
 ## The Minesweeper Command
 When you run the `/minesweeper` command, I will reply with a grid of spoiler tags. It has four options:
-* `game-width` and `game-height` tell me how many squares the game should be wide and tall, for a maximum of 40x20. Default is 8x8.
+* `game-width` and `game-height` tell me how many squares the game should be wide and tall, for a maximum of 25x20. Default is 8x8.
 * `num-mines` is how many mines there should be in the game; the more mines the more difficult it is. If omitted, I will pick a number based on the size of the game.
 * If you set `dont-start-uncovered` to true, all squares will start unopened. Otherwise, the first zeroes will have already been opened for you.
 

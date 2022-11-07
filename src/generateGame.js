@@ -20,7 +20,7 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 	else if (gameWidth <= 0) {
 		tooSmall = gameWidth + " squares wide";
 	}
-	else if (gameWidth > 40) {
+	else if (gameWidth > 25) {
 		tooLarge = "wide";
 	}
 
