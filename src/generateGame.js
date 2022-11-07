@@ -97,15 +97,16 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 	
 	/** ──────── UNCOVERING ──────── **/
 	
-	// Initialise vars
-	let zeroLocations = []; // Array of {x,y} objects, will contain locations of all zeroes in the game
-	let uncoveredLocations = []; // 2D array, each value is either nothing (not uncovered) or true (uncovered)
+	// 2D array, each value is either falsy (not uncovered) or true (uncovered)
+	let uncoveredLocations = [];
 	for (let y = 0; y < game.length; y++) {
 		uncoveredLocations.push([]);
 	}
 	
 	if (!startsNotUncovered) {
-		// Find all the zeroes in this game
+
+		// Find the coordinates of all zeroes in the game (array will contain objects with x and y properties)
+		let zeroLocations = [];
 		for (let y = 0; y < game.length; y++) {
 			for (let x = 0; x < game[y].length; x++) {
 				if (game[y][x] === 0) {
@@ -144,53 +145,55 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 	
 	/** ──────── CREATE REPLY ──────── **/
 	
-	let returnTxt;
-	if (numMines === 1) returnTxt = `Here's a board sized ${gameWidth}x${gameHeight} with 1 mine:`;
-	else                returnTxt = `Here's a board sized ${gameWidth}x${gameHeight} with ${numMines} mines:`;
+	let messages; // will be an array in case the message needs to be split up
+	let message;
+	if (numMines === 1) message = `Here's a board sized ${gameWidth}x${gameHeight} with 1 mine:`;
+	else                message = `Here's a board sized ${gameWidth}x${gameHeight} with ${numMines} mines:`;
 	
-	if (isRaw) returnTxt += "\n```";
+	if (isRaw) message += "\n```";
+
+	// For some stupid reason, Discord cuts off the message on the 200th emoji or spoiler tag (200 "symbol"s).
+	// Therefore, keep track of them and split the message up in case it's too many
+	let symbolCount = 0;
 	
 	for (let y = 0; y < game.length; y++) {
-		returnTxt += "\n"
+		let newLine = "";
+		let newSymbolCount = 0;
 		for (let x = 0; x < game[y].length; x++) {
 			if (game[y][x] === -1) {
-				returnTxt += "||:bomb:||";
+				newLine += "||:bomb:||";
+				newSymbolCount += 2;
 			}
 			else if (!startsNotUncovered && uncoveredLocations[y][x]) {
-				returnTxt += numberEmoji[game[y][x]];
+				newLine += numberEmoji[game[y][x]];
+				newSymbolCount += 1;
 			}
 			else {
-				returnTxt += `||${numberEmoji[game[y][x]]}||`;
+				newLine += `||${numberEmoji[game[y][x]]}||`;
+				newSymbolCount += 2;
 			}
 		}
+		// Split up if there's either too many characters or too many emoji/spoilers
+		if (message.length + newLine.length >= 1996 || symbolCount + newSymbolCount >= 200) {
+			if (!messages) messages = [];
+			if (isRaw) {
+				message += "\n```";
+				newLine = "```\n" + newLine;
+			}
+			messages.push(message);
+			message = newLine;
+			symbolCount = newSymbolCount;
+		}
+		else {
+			message += "\n" + newLine;
+			symbolCount += newSymbolCount;
+		}
 	}
 	
-	if (isRaw) { returnTxt += "\n```"; }
-	
-	// Send the message if it's not longer than 2000 chars (Discord's limit)
-	if (returnTxt.length <= 2000) {
-		return returnTxt;
+	if (isRaw) message += "\n```";
+	if (messages) {
+		messages.push(message);
+		return messages;
 	}
-	
-	// Otherwise, split the message
-	let splitReturns = [];
-	do {
-		let splitIndex = returnTxt.substring(0, 1900).lastIndexOf("\n");
-		if (splitIndex === -1) {
-			log("A too large message was generated after creating a game.");
-			return "Sorry, your message appears to be too large to send (because of Discord's character limit). Please try a smaller game next time.";
-		}
-		splitReturns.push(returnTxt.substring(0, splitIndex));
-		returnTxt = returnTxt.substring(splitIndex+1);
-		
-		// Also split the triple backticks
-		if (isRaw) {
-			splitReturns[splitReturns.length-1] += "\n```";
-			returnTxt = "```\n" + returnTxt;
-		}
-	} while (returnTxt.length > 1900)
-	
-	splitReturns.push(returnTxt);
-	
-	return splitReturns;
+	return message;
 };
