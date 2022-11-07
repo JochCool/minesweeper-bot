@@ -1,5 +1,4 @@
 const generateGame = require("./generateGame.js");
-const guildprefixes = require("./guildprefixes.js");
 const updates = require("../news.json");
 const package = require("../package.json");
 
@@ -247,15 +246,14 @@ var minesweeperOptions = [
 	new CommandOption(types.boolean, "dont-start-uncovered", "Option to not uncover the first part of the minesweeper field automatically.", false)
 ];
 
-const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, null).setOptions([
+const commands = new CommandArgument(types.root, "", null).setOptions([
 
 	new CommandArgument(types.command, "help", "Lists available commands.", true)
-		.setRunFunction(source => {
-			let prefix = guildprefixes.getPrefix(source.guild);
+		.setRunFunction(() => {
 			let returnTxt = "";
 			for (var i = 0; i < commands.options.length; i++) {
 				let command = commands.options[i];
-				let syntax = prefix + command.name;
+				let syntax = command.name;
 				let optionsSyntax = command.getOptionsSyntax();
 				if (optionsSyntax != "") {
 					syntax += " " + optionsSyntax;
@@ -302,30 +300,6 @@ const commands = new CommandArgument(types.root, guildprefixes.defaultprefix, nu
 			}
 			return returnTxt;
 		}),
-
-	new CommandArgument(types.command, "setprefix", "Changes the prefix for the bot, if you have Manage Server permissions.", true) 
-		.setOptions([
-			new CommandOption(types.string, "prefix", "The new prefix for the bot.", true)
-				.setRunFunction((source, inputs) => {
-					if (!source.guild) {
-						return { content: "The prefix can only be changed in a server, not here.", ephemeral: true };
-					}
-					if (!source.member.permissions.has("MANAGE_GUILD")) {
-						return { content: "You need the Manage Server permission to change the prefix.", ephemeral: true };
-					}
-					if (inputs[0].length == 0) {
-						return { content: "The prefix must be at least one character long.", ephemeral: true };
-					}
-
-					let prevprefix = guildprefixes.getPrefix(source.guild);
-					if (prevprefix == inputs[0]) {
-						return { content: "The prefix didn't change.", ephemeral: true };
-					}
-
-					guildprefixes.setPrefix(source.guild, inputs[0]);
-					return `The prefix of this server has been changed from \`${prevprefix}\` to \`${inputs[0]}\`.`;
-				})
-		]),
 
 	new CommandArgument(types.command, "ping", "Pong?")
 		.setRunFunction((source, inputs, client) => `pong (${Math.floor(client.ws.ping)}ms heartbeat)`)
