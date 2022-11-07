@@ -57,25 +57,24 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 	/** ──────── CREATE GAME ──────── **/
 	
 	// 2D array that contains the game, sorted [y][x]. -1 means a mine, positive number is the amount of neighbouring mines.
-	var game = [];
+	let game = [];
 	
 	// Initialise the game array with zeroes
-	for (var y = 0; y < gameHeight; y++) {
+	for (let y = 0; y < gameHeight; y++) {
 		game.push([]);
-		for (var x = 0; x < gameWidth; x++) {
+		for (let x = 0; x < gameWidth; x++) {
 			game[y].push(0);
 		}
 	}
 	
-	// Takes in an object with x and y properties
-	function coordIsInGame(coord) {
-		return coord.y >= 0 && coord.y < game.length &&
-		       coord.x >= 0 && coord.x < game[coord.y].length;
+	function coordIsInGame(x, y) {
+		return y >= 0 && y < game.length &&
+		       x >= 0 && x < game[y].length;
 	};
 	
 	// Fill the game with mines!
-	for (var mine = 0; mine < numMines; mine++) {
-		var x = Math.floor(Math.random()*gameWidth),
+	for (let mine = 0; mine < numMines; mine++) {
+		let x = Math.floor(Math.random()*gameWidth),
 		    y = Math.floor(Math.random()*gameHeight);
 		
 		// Retry if there was already a mine there
@@ -87,10 +86,10 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 		game[y][x] = -1;
 		
 		// Add 1 to all neighbouring tiles
-		for (var j = 0; j < neighbourLocations.length; j++) {
+		for (let j = 0; j < neighbourLocations.length; j++) {
 			let newX = x + neighbourLocations[j].x;
 			let newY = y + neighbourLocations[j].y;
-			if (coordIsInGame(newCoord) && game[newY][newX] !== -1) {
+			if (coordIsInGame(newX, newY) && game[newY][newX] !== -1) {
 				game[newY][newX]++;
 			}
 		}
@@ -101,14 +100,14 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 	// Initialise vars
 	let zeroLocations = []; // Array of {x,y} objects, will contain locations of all zeroes in the game
 	let uncoveredLocations = []; // 2D array, each value is either nothing (not uncovered) or true (uncovered)
-	for (var y = 0; y < game.length; y++) {
+	for (let y = 0; y < game.length; y++) {
 		uncoveredLocations.push([]);
 	}
 	
 	if (!startsNotUncovered) {
 		// Find all the zeroes in this game
-		for (var y = 0; y < game.length; y++) {
-			for (var x = 0; x < game[y].length; x++) {
+		for (let y = 0; y < game.length; y++) {
+			for (let x = 0; x < game[y].length; x++) {
 				if (game[y][x] === 0) {
 					zeroLocations.push({x: x, y: y});
 				}
@@ -126,15 +125,16 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 			
 			// Uncover neighbouring tiles
 			while (locationsToUncover.length > 0) {
-				for (var j = 0; j < neighbourLocations.length; j++) {
+				for (let j = 0; j < neighbourLocations.length; j++) {
 					
-					let newCoord = {x: locationsToUncover[0].x + neighbourLocations[j].x, y: locationsToUncover[0].y + neighbourLocations[j].y};
-					if (!coordIsInGame(newCoord) || uncoveredLocations[newCoord.y][newCoord.x] === true) continue;
-					uncoveredLocations[newCoord.y][newCoord.x] = true;
+					let newX = locationsToUncover[0].x + neighbourLocations[j].x;
+					let newY = locationsToUncover[0].y + neighbourLocations[j].y;
+					if (!coordIsInGame(newX, newY) || uncoveredLocations[newY][newX]) continue;
+					uncoveredLocations[newY][newX] = true;
 					
 					// Continue uncovering
-					if (game[newCoord.y][newCoord.x] === 0) {
-						locationsToUncover.push(newCoord);
+					if (game[newY][newX] === 0) {
+						locationsToUncover.push({ x: newX, y: newY });
 					}
 				}
 				locationsToUncover.shift();
@@ -150,9 +150,9 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 	
 	if (isRaw) returnTxt += "\n```";
 	
-	for (var y = 0; y < game.length; y++) {
+	for (let y = 0; y < game.length; y++) {
 		returnTxt += "\n"
-		for (var x = 0; x < game[y].length; x++) {
+		for (let x = 0; x < game[y].length; x++) {
 			if (game[y][x] === -1) {
 				returnTxt += "||:bomb:||";
 			}
