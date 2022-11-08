@@ -7,7 +7,8 @@
 	"files": [
 		"src/*.js",
 		"auth.json",
-		"news.json"
+		"news.json",
+		"settings.json"
 	],
 	"repository": "https://github.com/JochCool/minesweeper-bot",
 	"license": "MIT",

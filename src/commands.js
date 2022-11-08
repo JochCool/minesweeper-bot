@@ -1,4 +1,5 @@
 const generateGame = require("./generateGame.js");
+const settings = require("../settings.json");
 const updates = require("../news.json");
 const package = require("../package.json");
 
@@ -240,20 +241,20 @@ class CommandOption extends CommandArgument {
 }
 
 var minesweeperOptions = [
-	new CommandOption(types.integer, "game-width", "Amount of squares horizontally.", false).setMinValue(1).setMaxValue(40),
-	new CommandOption(types.integer, "game-height", "Amount of squares vertically.", false).setMinValue(1).setMaxValue(20),
-	new CommandOption(types.integer, "num-mines", "Number of mines in the game.", false).setMinValue(1).setMaxValue(40*20),
+	new CommandOption(types.integer, "game-width", "Amount of squares horizontally.", false).setMinValue(1).setMaxValue(settings.maxGameWidth),
+	new CommandOption(types.integer, "game-height", "Amount of squares vertically.", false).setMinValue(1).setMaxValue(settings.maxGameHeight),
+	new CommandOption(types.integer, "num-mines", "Number of mines in the game.", false).setMinValue(1).setMaxValue(settings.maxGameWidth*settings.maxGameHeight),
 	new CommandOption(types.boolean, "dont-start-uncovered", "Option to not uncover the first part of the minesweeper field automatically.", false)
 ];
 
-const commands = new CommandArgument(types.root, "", null).setOptions([
+const commands = new CommandArgument(types.root, settings.prefix, null).setOptions([
 
 	new CommandArgument(types.command, "help", "Lists available commands.", true)
 		.setRunFunction(() => {
 			let returnTxt = "";
 			for (var i = 0; i < commands.options.length; i++) {
 				let command = commands.options[i];
-				let syntax = command.name;
+				let syntax = settings.prefix + command.name;
 				let optionsSyntax = command.getOptionsSyntax();
 				if (optionsSyntax != "") {
 					syntax += " " + optionsSyntax;

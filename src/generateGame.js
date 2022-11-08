@@ -1,5 +1,7 @@
 // This function is the heart of the bot; it generates the Minesweeper game. It gets called whenever the minesweeper command is executed.
 
+const settings = require("../settings.json");
+
 // If you add these xy values to some other coordinate, you'll get the eight neighbours of that coordinate.
 const neighbourLocations = [{x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1}, {x: 1, y: 0}, {x: 1, y: 1}, {x: 0, y: 1}, {x: -1, y: 1}, {x: -1, y: 0}];
 
@@ -20,7 +22,7 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 	else if (gameWidth <= 0) {
 		tooSmall = gameWidth + " squares wide";
 	}
-	else if (gameWidth > 25) {
+	else if (gameWidth > settings.maxGameWidth) {
 		tooLarge = "wide";
 	}
 
@@ -31,7 +33,7 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 		if (tooSmall) tooSmall = `sized ${gameWidth} by ${gameHeight}`;
 		else          tooSmall = gameHeight + " squares high";
 	}
-	else if (gameHeight > 20) {
+	else if (gameHeight > settings.maxGameHeight) {
 		if (tooLarge) tooLarge = "large";
 		else          tooLarge = "tall";
 	}

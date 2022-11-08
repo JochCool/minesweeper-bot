@@ -2,9 +2,6 @@
 // What you're probably looking for is the generateGame.js file, which contains the actually minesweeper-related code.
 // The code in this file manages the bot's connection and interprets commands.
 
-// The prefix for text commands, you can change this if you want it you are hosting the bot yourself.
-const prefix = "!";
-
 const package = require("../package.json");
 const log = require("./log.js");
 
@@ -16,6 +13,7 @@ log(`Starting Minesweeper Bot version ${package.version}`);
 // Load everything
 const Discord = require("discord.js");
 const auth = require("../auth.json");
+const settings = require("../settings.json");
 const commands = require("./commands.js");
 
 log("All modules loaded");
@@ -150,8 +148,8 @@ client.on('messageCreate', message => {
 	}
 	
 	// Commands
-	if (message.content.startsWith(prefix)) {
-		respondToCommand(message, message.content.substring(prefix.length).trim());
+	if (message.content.startsWith(settings.prefix)) {
+		respondToCommand(message, message.content.substring(settings.prefix.length).trim());
 	}
 });
 
