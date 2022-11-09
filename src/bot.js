@@ -224,7 +224,17 @@ function executeCommand(source, command, options) {
 		if (!argument) {
 			return;
 		}
-		
+
+		// Check permissions
+		if (argument.default_member_permissions) {
+			if (!source.guild) {
+				return { content: "This command can only be used in a server.", ephemeral: true };
+			}
+			if (!source.member.permissions.has(argument.default_member_permissions)) {
+				return { content: "You do not have permsision to use this command.", ephemeral: true };
+			}
+		}
+
 		// Get the options
 		let inputs = [];
 		if (argument.options) {

@@ -61,6 +61,11 @@ class CommandArgument {
 		return this;
 	}
 
+	setDefaultMemberPermissions(permissions) {
+		this.default_member_permissions = permissions;
+		return this;
+	}
+
 	// Checks if the first input in the command string is a valid input for this argument. If so, returns the parsed input and where in the string it ends. If not, returns an error message.
 	checkInput(input) {
 		if (input == "") {
@@ -266,10 +271,19 @@ var minesweeperOptions = [
 const commands = new CommandArgument(types.root, settings.prefix, null).setOptions([
 
 	new CommandArgument(types.command, "help", "Lists available commands.", true)
-		.setRunFunction(() => {
+		.setRunFunction(source => {
+			// Loop through commands and add their syntax
 			let returnTxt = "";
 			for (var i = 0; i < commands.options.length; i++) {
 				let command = commands.options[i];
+
+				// Skip if no permission
+				if (command.default_member_permissions) {
+					if (!source.guild || !source.member.permissions.has(command.default_member_permissions)) {
+						continue;
+					}
+				}
+
 				let syntax = settings.prefix + command.name;
 				let optionsSyntax = command.getOptionsSyntax();
 				if (optionsSyntax != "") {
