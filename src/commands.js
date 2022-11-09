@@ -27,6 +27,7 @@ const types = {
 	string: 3,
 	integer: 4,
 	boolean: 5,
+	channel: 7,
 	number: 10,
 };
 
@@ -117,49 +118,64 @@ class CommandArgument {
 		}
 
 		// Convert inputs
-		if (this.type == types.boolean) {
-			if (input.startsWith("false") || input.startsWith("no")) {
+		switch (this.type) {
+			case types.boolean:
+				if (input.startsWith("false") || input.startsWith("no")) {
+					return {
+						input: false,
+						inputEnd: inputEnd < 0 ? 5 : inputEnd
+					};
+				}
 				return {
-					input: false,
-					inputEnd: inputEnd < 0 ? 5 : inputEnd
+					input: true,
+					inputEnd: inputEnd < 0 ? 4 : inputEnd
 				};
-			}
-			return {
-				input: true,
-				inputEnd: inputEnd < 0 ? 4 : inputEnd
-			};
-		}
-		if (this.type == types.number || this.type == types.integer) {
-			let num = Number(input);
-			if (isNaN(num)) {
+			
+			case types.number:
+			case types.integer:
+				let num = Number(input);
+				if (isNaN(num)) {
+					return {
+						input: input,
+						error: "Not a valid number"
+					};
+				}
+				if (this.type == types.integer && num % 1 != 0) {
+					return {
+						input: input,
+						error: "Not an integer"
+					};
+				}
 				return {
-					input: input,
-					error: "Not a valid number"
+					input: num,
+					inputEnd: inputEnd
 				};
-			}
-			if (this.type == types.integer && num % 1 != 0) {
-				return {
-					input: input,
-					error: "Not an integer"
-				};
-			}
-			return {
-				input: num,
-				inputEnd: inputEnd
-			};
-		}
 
-		if (this.type == types.string) {
-			return {
-				input: input,
-				inputEnd: inputEnd
-			};
+			case types.string:
+				return {
+					input: input,
+					inputEnd: inputEnd
+				};
+			
+			case types.channel:
+				const match = /^<#(\d+)>$/.exec(input);
+				if (!match) {
+					return {
+						input: input,
+						error: "Not a channel mention"
+					};
+				}
+				return {
+					input: match[1],
+					inputEnd: inputEnd
+				};
+			
+			default:
+				return {
+					input: input,
+					error: "This argument is only supported in slash commands"
+				};
 		}
-		
-		return {
-			input: input,
-			error: "This argument is only supported in slash commands"
-		};
 	}
 
 	// Returns the syntax of this argument's options, properly formatted. (If requiredOnly is true, will never return things in square brackets.)
