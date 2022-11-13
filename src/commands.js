@@ -1,4 +1,7 @@
-const generateGame = require("./generateGame.js");
+const Discord = require("discord.js");
+const { generateGame, checkGameSettings } = require("./generateGame.js");
+const AutoChannel = require("./AutoChannel.js");
+const log = require("./log.js");
 const settings = require("../settings.json");
 const updates = require("../news.json");
 const package = require("../package.json");
@@ -261,12 +264,32 @@ class CommandOption extends CommandArgument {
 	}
 }
 
-var minesweeperOptions = [
-	new CommandOption(types.integer, "game-width", "Amount of squares horizontally.", false).setMinValue(1).setMaxValue(settings.maxGameWidth),
-	new CommandOption(types.integer, "game-height", "Amount of squares vertically.", false).setMinValue(1).setMaxValue(settings.maxGameHeight),
-	new CommandOption(types.integer, "num-mines", "Number of mines in the game.", false).setMinValue(1).setMaxValue(settings.maxGameWidth*settings.maxGameHeight),
-	new CommandOption(types.boolean, "dont-start-uncovered", "Option to not uncover the first part of the minesweeper field automatically.", false)
+const gameWidthOption = new CommandOption(types.integer, "game-width", "Amount of squares horizontally.", false).setMinValue(1).setMaxValue(settings.maxGameWidth);
+const gameHeightOption = new CommandOption(types.integer, "game-height", "Amount of squares vertically.", false).setMinValue(1).setMaxValue(settings.maxGameHeight);
+const numMinesOption = new CommandOption(types.integer, "num-mines", "Number of mines in the game.", false).setMinValue(1).setMaxValue(settings.maxGameWidth*settings.maxGameHeight);
+const dontStartUncoveredOption = new CommandOption(types.boolean, "dont-start-uncovered", "Option to not uncover the first part of the minesweeper field automatically.", false);
+
+const minesweeperOptions = [
+	gameWidthOption,
+	gameHeightOption,
+	numMinesOption,
+	dontStartUncoveredOption
 ];
+
+function checkAndGenerateGame(inputs, isRaw) {
+
+	let gameSettings = {
+		width: inputs[0],
+		height: inputs[1],
+		numMines: inputs[2],
+		startsNotUncovered: inputs[3]
+	}
+
+	let error = checkGameSettings(gameSettings);
+	if (error) return error;
+
+	return generateGame(gameSettings, isRaw)
+};
 
 const commands = new CommandArgument(types.root, settings.prefix, null).setOptions([
 
@@ -298,20 +321,66 @@ const commands = new CommandArgument(types.root, settings.prefix, null).setOptio
 		}),
 	
 	new CommandArgument(types.command, "minesweeperraw", "Creates a Minesweeper game and shows the markdown code for copy-pasting.")
-		.setRunFunction((source, inputs) => generateGame(inputs[0], inputs[1], inputs[2], true, inputs[3]))
+		.setRunFunction((source, inputs) => checkAndGenerateGame(inputs, true))
 		.setOptions(minesweeperOptions),
 
 	new CommandArgument(types.command, "msraw", "Alias of the minesweeperraw command.", true)
-		.setRunFunction((source, inputs) => generateGame(inputs[0], inputs[1], inputs[2], true, inputs[3]))
+		.setRunFunction((source, inputs) => checkAndGenerateGame(inputs, true))
 		.setOptions(minesweeperOptions),
 
 	new CommandArgument(types.command, "minesweeper", "Creates a Minesweeper game for you to play!")
-		.setRunFunction((source, inputs) => generateGame(inputs[0], inputs[1], inputs[2], false, inputs[3]))
+		.setRunFunction((source, inputs) => checkAndGenerateGame(inputs, false))
 		.setOptions(minesweeperOptions),
 
 	new CommandArgument(types.command, "ms", "Alias of the minesweeper command.", true)
-		.setRunFunction((source, inputs) => generateGame(inputs[0], inputs[1], inputs[2], false, inputs[3]))
+		.setRunFunction((source, inputs) => checkAndGenerateGame(inputs, false))
 		.setOptions(minesweeperOptions),
+
+	new CommandArgument(types.command, "auto", "Creates Minesweeper games at regular intervals.")
+		.setDefaultMemberPermissions("16") // Manage Channels
+		.setRunFunction(async (source, inputs, client) => {
+
+			let interval = inputs[1];
+			if (interval == 0) {
+				if (AutoChannel.delete(inputs[0])) {
+					return "I will no longer send Minesweeper games in that channel.";
+				}
+				return { content: "You set the interval to 0, which means I should stop auto-sending games, but I was not doing that in that channel to begin with.", ephemeral: true };
+			}
+
+			if (interval < 0) return { content: "I cannot create games in a negative amount of time.", ephemeral: true };
+			if (interval > settings.maxAutoChannelInterval) return { content: "That takes far too long! The maximum is 3 weeks.", ephemeral: true };
+
+			let gameSettings = {
+				width: inputs[2],
+				height: inputs[3],
+				numMines: inputs[4],
+				startsNotUncovered: inputs[5]
+			};
+			let error = checkGameSettings(gameSettings);
+			if (error) return { content: error, ephemeral: true };
+
+			let channel = await AutoChannel.tryFetchChannel(client, inputs[0]);
+			if (!(channel instanceof Discord.Channel)) {
+				return { content: channel, ephemeral: true };
+			}
+			
+			AutoChannel.create(channel, interval, gameSettings);
+			log("New autochannel created!");
+
+			if (interval == 1) {
+				return `I will send a Minesweeper game in ${channel} every minute.`;
+			}
+			return `I will send a Minesweeper game in ${channel} every ${interval} minutes.`;
+		})
+		.setOptions([
+			new CommandOption(types.channel, "channel", "The channel in which to send the games.", true),
+			new CommandOption(types.integer, "interval", "The number of minutes between messages. Set this to 0 to make me stop.", true).setMinValue(0).setMaxValue(settings.maxAutoChannelInterval),
+			gameWidthOption,
+			gameHeightOption,
+			numMinesOption,
+			dontStartUncoveredOption
+		]),
 
 	new CommandArgument(types.command, "info", "Gives info about the bot.")
 		.setRunFunction(() => {
@@ -321,7 +390,7 @@ const commands = new CommandArgument(types.root, settings.prefix, null).setOptio
 		}),
 	
 	new CommandArgument(types.command, "howtoplay", "Teaches you how to play Minesweeper.")
-		.setRunFunction(() => `In Minesweeper, you get a rectangular grid of squares. In some of those squares, mines are hidden, but you don't know which squares. The objective is 'open' all the squares that don't have a hidden mine, but to not touch the ones that do.\n\nLet's start with an example. ${generateGame(5, 5, 3)}\nTo open a square, click the spoiler tag. So go click one now. The contents of that square will be revealed when you do so. If it's a mine (:bomb:), you lose! If it's not a mine, you get a mysterious number instead, like :two:. This number is there to help you, as it indicates how many mines are in the eight squares that touch it (horizontally, vertically or diagonally). Using this information and some good logic, you can figure out the location of most of the mines!`),
+		.setRunFunction(() => `In Minesweeper, you get a rectangular grid of squares. In some of those squares, mines are hidden, but you don't know which squares. The objective is 'open' all the squares that don't have a hidden mine, but to not touch the ones that do.\n\nLet's start with an example. ${generateGame({width: 5, height: 5, numMines: 3})}\nTo open a square, click the spoiler tag. So go click one now. The contents of that square will be revealed when you do so. If it's a mine (:bomb:), you lose! If it's not a mine, you get a mysterious number instead, like :two:. This number is there to help you, as it indicates how many mines are in the eight squares that touch it (horizontally, vertically or diagonally). Using this information and some good logic, you can figure out the location of most of the mines!`),
 
 	new CommandArgument(types.command, "news", "Lists the past three updates to the bot.")
 		.setRunFunction(() => {

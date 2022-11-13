@@ -15,6 +15,7 @@ const Discord = require("discord.js");
 const auth = require("../auth.json");
 const settings = require("../settings.json");
 const commands = require("./commands.js");
+const AutoChannel = require("./AutoChannel.js");
 
 log("All modules loaded");
 
@@ -85,6 +86,11 @@ setTimeout(report, getTimeUntilNextHour());
 
 client.on("ready", () => {
 	log(`Ready! Current guild count: ${getGuildCount()}`);
+
+	AutoChannel.loadAndStartAll(client).catch(err => {
+		log("WARNING: FAILED TO LOAD AUTOCHANNELS");
+		log(err);
+	})
 });
 
 client.on("disconnected", event => {
@@ -165,6 +171,9 @@ async function respondToCommand(source, command, options) {
 	let result = executeCommand(source, command, options);
 	if (!result) {
 		return;
+	}
+	if (result instanceof Promise) {
+		result = await result;
 	}
 	commandsThisHour++;
 

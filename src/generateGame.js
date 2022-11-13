@@ -7,33 +7,30 @@ const neighbourLocations = [{x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1}, {x: 1,
 
 const numberEmoji = [":zero:", ":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":nine:"];
 
-// Returns the text that the bot should reply with based on the given inputs.
-module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, startsNotUncovered) {
-	
-	/** ──────── CHECKS ──────── **/
-	
-	// Check game size, and construct error message if needed
+// Returns an error message if the game settings are invalid. The game settings object may be changed.
+function checkGameSettings(gameSettings) {
+
 	let tooSmall;
 	let tooLarge;
 
-	if (isNaN(gameWidth)) {
-		gameWidth = isNaN(gameHeight) ? 8 : gameHeight;
+	if (isNaN(gameSettings.width)) {
+		gameSettings.width = isNaN(gameSettings.height) ? settings.defaultGameSize : gameSettings.height;
 	}
-	else if (gameWidth <= 0) {
-		tooSmall = gameWidth + " squares wide";
+	else if (gameSettings.width <= 0) {
+		tooSmall = gameSettings.width + " squares wide";
 	}
-	else if (gameWidth > settings.maxGameWidth) {
+	else if (gameSettings.width > settings.maxGameWidth) {
 		tooLarge = "wide";
 	}
 
-	if (isNaN(gameHeight)) {
-		gameHeight = gameWidth;
+	if (isNaN(gameSettings.height)) {
+		gameSettings.height = gameSettings.width;
 	}
-	else if (gameHeight <= 0) {
-		if (tooSmall) tooSmall = `sized ${gameWidth} by ${gameHeight}`;
-		else          tooSmall = gameHeight + " squares high";
+	else if (gameSettings.height <= 0) {
+		if (tooSmall) tooSmall = `sized ${gameSettings.width} by ${gameSettings.height}`;
+		else          tooSmall = gameSettings.height + " squares high";
 	}
-	else if (gameHeight > settings.maxGameHeight) {
+	else if (gameSettings.height > settings.maxGameHeight) {
 		if (tooLarge) tooLarge = "large";
 		else          tooLarge = "tall";
 	}
@@ -46,15 +43,20 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 	}
 	
 	// Check mine count
-	if (isNaN(numMines)) {
-		numMines = Math.round(gameWidth * gameHeight / 5);
+	if (isNaN(gameSettings.numMines)) {
+		gameSettings.numMines = Math.round(gameSettings.width * gameSettings.height * settings.defaultMineCount);
 	}
-	else if (numMines <= 0) {
+	else if (gameSettings.numMines <= 0) {
 		return "You think you can look clever by solving a Minesweeper game without mines? Not gonna happen my friend.";
 	}
-	else if (numMines > gameWidth * gameHeight) {
-		return `I can't fit that many mines in a game sized ${gameWidth}x${gameHeight}!`;
+	else if (gameSettings.numMines > gameSettings.width * gameSettings.height) {
+		return `I can't fit that many mines in a game sized ${gameSettings.width}x${gameSettings.height}!`;
 	}
+}
+
+// Returns the text that the bot should reply with based on the given settings (that are already assumed to be valid).
+function generateGame(gameSettings, isRaw) {
+	let { width, height, numMines, startsNotUncovered } = gameSettings;
 	
 	/** ──────── CREATE GAME ──────── **/
 	
@@ -62,9 +64,9 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 	let game = [];
 	
 	// Initialise the game array with zeroes
-	for (let y = 0; y < gameHeight; y++) {
+	for (let y = 0; y < height; y++) {
 		game.push([]);
-		for (let x = 0; x < gameWidth; x++) {
+		for (let x = 0; x < width; x++) {
 			game[y].push(0);
 		}
 	}
@@ -76,8 +78,8 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 	
 	// Fill the game with mines!
 	for (let mine = 0; mine < numMines; mine++) {
-		let x = Math.floor(Math.random()*gameWidth),
-		    y = Math.floor(Math.random()*gameHeight);
+		let x = Math.floor(Math.random()*width),
+		    y = Math.floor(Math.random()*height);
 		
 		// Retry if there was already a mine there
 		if (game[y][x] === -1) {
@@ -149,8 +151,8 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 	
 	let messages; // will be an array in case the message needs to be split up
 	let message;
-	if (numMines === 1) message = `Here's a board sized ${gameWidth}x${gameHeight} with 1 mine:`;
-	else                message = `Here's a board sized ${gameWidth}x${gameHeight} with ${numMines} mines:`;
+	if (numMines === 1) message = `Here's a board sized ${width}x${height} with 1 mine:`;
+	else                message = `Here's a board sized ${width}x${height} with ${numMines} mines:`;
 	
 	if (isRaw) message += "\n```";
 
@@ -198,4 +200,9 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 		return messages;
 	}
 	return message;
+};
+
+module.exports = {
+	generateGame: generateGame,
+	checkGameSettings: checkGameSettings
 };
