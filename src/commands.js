@@ -6,23 +6,8 @@ const settings = require("../settings.json");
 const updates = require("../news.json");
 const package = require("../package.json");
 
-/*
-The commands object stores the syntax and function of all of the bot's commands. It is structured in the same way as Discord's Application Command structure:
-https://discord.com/developers/docs/interactions/application-commands
-
-A CommandArgument can be the root object, a command, or an option within a command. Command groups are currently unsupported.
-The root object contains other commands in their 'options', and commands can contain an ordered list of options that the user can give values for.
-Options are their own subclass: CommandOption, which can be optional or required. Optional arguments must be at the end of the options list.
-
-Arguments can have a run function. If the last argument specified by the user is this argument, then this argument's run function will be executed.
-If this is not the last argument specified, but the specified arguments after this don't have a run function, then this argument's run function will be executed instead.
-There must always be an argument containing a run function before the first optional argument, otherwise the command has no functionality if no optional arguments are specified.
-
-The arguments that get passed into the run function are:
-- Message|CommandInteraction, the Discord message or slash command interaction that triggered this command.
-- Array, lists the values of the options specified by the user, in the same order as listed in the command.
-- Client, the Discord client that received the command.
-*/
+// The commands object stores the syntax and function of all of the bot's commands. It is structured in the same way as Discord's Application Command structure:
+// https://discord.com/developers/docs/interactions/application-commands
 
 const types = {
 	command: 1,
@@ -34,42 +19,118 @@ const types = {
 	number: 10,
 };
 
+/**
+ * @callback CommandRunFunction
+ * @param {Discord.Message|Discord.CommandInteraction} source The Discord message or slash command interaction that triggered this command.
+ * @param {Array} inputs The the values of the options specified by the user, in the same order as listed in the command.
+ * @param {Discord.Client} client The Discord client that received the command.
+ */
+
+/**
+ * Represents either the root object of the commands tree, a command, or an option within a command. Command groups are currently unsupported.
+ * 
+ * The root object contains other commands in their 'options', and command objects can contain an ordered list of options that the user can give values for.
+ * Options are their own subclass: {@link CommandOption}, which can be optional or required. Optional arguments must be at the end of the options list.
+ * 
+ * Arguments can have a run function. If the last argument specified by the user is this argument, then this argument's run function will be executed.
+ * If this is not the last argument specified, but the specified arguments after this don't have a run function, then this argument's run function will be executed instead.
+ * There must always be an argument containing a run function before the first optional argument, otherwise the command has no functionality if no optional arguments are specified.
+ */
 class CommandArgument {
 
+	/**
+	 * Constructs a CommandArgument.
+	 * @param {number} type The type of command argument.
+	 * @param {string} name The name of the command or option.
+	 * @param {string} description The description of the command or option.
+	 * @param {boolean} [isTextOnly] Whether this command can only be executed as a text command.
+	 */
 	constructor(type, name, description, isTextOnly) {
+
+		/**
+		 * The type of command argument.
+		 * @type {number}
+		 */
 		this.type = type;
+
+		/**
+		 * The name of the command or option.
+		 * @type {string}
+		 */
 		this.name = name;
+
+		/**
+		 * The description of the command or option (displayed in the slash commands UI and in the help command output).
+		 * @type {string}
+		 */
 		this.description = description;
 		
 		if (isTextOnly) {
+			/**
+			 * True if this command can only be executed as a text command.
+			 * @type {boolean}
+			 */
 			this.isTextOnly = true;
 		}
 	}
 
+	/**
+	 * True if this is the root object or a command; otherwise, false.
+	 */
 	get isCommand() {
 		return this.type <= types.root;
 	}
 
+	/**
+	 * False if this is a required argument or a command; otherwise, true.
+	 */
 	get isOptional() {
 		return !(this.isCommand || this.required);
 	}
 
+	/**
+	 * Sets the options of this command.
+	 * @param {Array<CommandOption>} options The options for this command.
+	 * @returns {CommandArgument} This object.
+	 */
 	setOptions(options) {
+		/**
+		 * The options for this command.
+		 * @type {Array<CommandOption>}
+		 */
 		this.options = options;
 		return this;
 	}
 
+	/**
+	 * Sets the run function of this argument.
+	 * @param {CommandRunFunction} runFunction The function to run upon execution.
+	 * @returns {CommandArgument} This object.
+	 */
 	setRunFunction(runFunction) {
+		/**
+		 * The function that is run upon execution of this command at this argument.
+		 * @type {CommandRunFunction}
+		 */
 		this.run = runFunction;
 		return this;
 	}
 
+	/**
+	 * Sets the default permissions for this command.
+	 * @param {string} permissions The stringified permissions bitset. See: https://discord.com/developers/docs/topics/permissions
+	 * @returns {CommandArgument} This object.
+	 */
 	setDefaultMemberPermissions(permissions) {
 		this.default_member_permissions = permissions;
 		return this;
 	}
 
-	// Checks if the first input in the command string is a valid input for this argument. If so, returns the parsed input and where in the string it ends. If not, returns an error message.
+	/**
+	 * Checks if the first input in the command string is a valid input for this argument. If so, parses the input. If not, creates an error message.
+	 * @param {string} input The input to check and parse.
+	 * @returns {{input: any, inputEnd: number|undefined, error: string|undefined}} Returns an object containing the parsed/checked input. If there was an error, the `error` property is set to an error message. If not, the `inputEnd` property is set to the position in the input string where the parsing ended.
+	 */
 	checkInput(input) {
 		if (input == "") {
 			return {
@@ -186,7 +247,12 @@ class CommandArgument {
 		}
 	}
 
-	// Returns the syntax of this argument's options, properly formatted. (If requiredOnly is true, will never return things in square brackets.)
+	/**
+	 * Returns the syntax of this argument's options, properly formatted.
+	 * @param {number} fromIndex The index in the options array to start at.
+	 * @param {boolean} requiredOnly Whether only required options need to be shown (so nothing in square brackets).
+	 * @returns {string} The syntax of this command's options.
+	 */
 	getOptionsSyntax(fromIndex, requiredOnly) {
 		if (!this.options) {
 			return "";
@@ -247,23 +313,70 @@ class CommandArgument {
 	}
 };
 
+/**
+ * Represents an option in a command.
+ */
 class CommandOption extends CommandArgument {
+	/**
+	 * Constructs a CommandOption.
+	 * @param {number} type The type of command option.
+	 * @param {string} name The name of the command option.
+	 * @param {string} description The description of the command option.
+	 * @param {boolean} [isRequired] Whether this option is required.
+	 */
 	constructor(type, name, description, isRequired) {
 		super(type, name, description);
+
+		/**
+		 * True if this option is required; otherwise, false.
+		 */
 		this.required = isRequired;
 	}
 
-	// Note: these restrictions are not enforced in text commands right now, only in slash commands by Discord.
+	/**
+	 * Sets the minimum value permitted for this option.
+	 * 
+	 * Note: this restriction is not enforced in text commands right now, only in slash commands by Discord.
+	 * @param {number} value The minimum value permitted for this option.
+	 * @returns {CommandOption} This object.
+	 */
 	setMinValue(value) {
+		/**
+		 * The minimum value permitted for this option.
+		 * @type {number}
+		 */
 		this.min_value = value;
 		return this;
 	}
+	
+	/**
+	 * Sets the maximum value permitted for this option.
+	 * 
+	 * Note: this restriction is not enforced in text commands right now, only in slash commands by Discord.
+	 * @param {number} value The maximum value permitted for this option.
+	 * @returns {CommandOption} This object.
+	 */
 	setMaxValue(value) {
+		/**
+		 * The maximum value permitted for this option.
+		 * @type {number}
+		 */
 		this.max_value = value;
 		return this;
 	}
-	// For types.channel only
+
+	/**
+	 * Sets the channel types permitted for this option.
+	 * 
+	 * Note: this restriction is not enforced in text commands right now, only in slash commands by Discord.
+	 * @param {Array<number>} channelTypes The types of channels permitted for this option.
+	 * @returns {CommandOption} This object.
+	 */
 	setChannelTypes(channelTypes) {
+		/**
+		 * The channel types permitted for this option.
+		 * @type {Array<number>}
+		 */
 		this.channel_types = channelTypes;
 		return this;
 	}

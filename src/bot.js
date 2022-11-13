@@ -165,8 +165,13 @@ client.on('interactionCreate', interaction => {
 	}
 });
 
-// For text commands, 'command' will be the whole command, for interactions it'll be only the command name and 'options' contains the rest.
-// 'source' needs to be anything with a .reply(message) function and .channel property.
+/**
+ * Executes a command and responds.
+ * @param {Discord.Message|Discord.CommandInteraction} source The Discord message or slash command interaction that triggered this command.
+ * @param {string} command The command to execute. For text commands, this is the whole command; for interactions it is only the command name and 'options' contains the rest.
+ * @param {Discord.CommandInteractionOptionResolver} [options] For slash commands, the options specified.
+ * @returns {Promise<void>}
+ */
 async function respondToCommand(source, command, options) {
 	let result = executeCommand(source, command, options);
 	if (!result) {
@@ -201,6 +206,11 @@ async function respondToCommand(source, command, options) {
 		source.reply(convertMessage(result)).catch(log);
 	}
 
+	/**
+	 * Modifies a message to make it ready for sending.
+	 * @param {string|Discord.MessageOptions} message The message to convert.
+	 * @returns {Discord.MessageOptions} The modified message.
+	 */
 	function convertMessage(message) {
 		if (typeof message == "string") {
 			message = { content: message };
@@ -210,6 +220,13 @@ async function respondToCommand(source, command, options) {
 	}
 }
 
+/**
+ * Executes a command.
+ * @param {Discord.Message|Discord.CommandInteraction} source The Discord message or slash command interaction that triggered this command.
+ * @param {string} command The command to execute.
+ * @param {Discord.CommandInteractionOptionResolver} [options] For slash commands, the options specified.
+ * @returns {string|Discord.MessageOptions|Array<string|Discord.MessageOptions>|Promise<string>|Promise<Discord.MessageOptions>|Promise<Array<string|Discord.MessageOptions>>} The message to reply with.
+ */
 function executeCommand(source, command, options) {
 	try {
 		//log("Executing command: "+command);
@@ -306,5 +323,3 @@ function executeCommand(source, command, options) {
 		return { content: "An unknown error occurred while evaluating your command.", ephemeral: true };
 	}
 };
-
-// The generateGame function and the command tree used to be here, but they have been moved to their own files.

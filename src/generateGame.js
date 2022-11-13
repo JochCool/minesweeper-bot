@@ -7,7 +7,20 @@ const neighbourLocations = [{x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1}, {x: 1,
 
 const numberEmoji = [":zero:", ":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":nine:"];
 
-// Returns an error message if the game settings are invalid. The game settings object may be changed.
+/**
+ * Contains the settings for a Minesweeper game.
+ * @typedef {Object} GameSettings
+ * @property {number} width The width of the game.
+ * @property {number} height The height of the game.
+ * @property {number} numMines The number of mines in the game.
+ * @property {boolean} startsNotUncovered Whether the game should *not* start partially uncovered.
+ */
+
+/**
+ * Checks if game settings are valid, and creates an error message if not.
+ * @param {GameSettings} gameSettings The settings to check. This object may be modified.
+ * @returns {string|undefined} The error message, if the game settings are invalid.
+ */
 function checkGameSettings(gameSettings) {
 
 	let tooSmall;
@@ -54,7 +67,12 @@ function checkGameSettings(gameSettings) {
 	}
 }
 
-// Returns the text that the bot should reply with based on the given settings (that are already assumed to be valid).
+/**
+ * Returns the text that the bot should reply with based on the given settings (that are already assumed to be valid).
+ * @param {GameSettings} gameSettings The settings of the game (must already have been validated).
+ * @param {boolean} isRaw True if the game should be within a code block; otherwise, false.
+ * @returns {string|Array<string>} The message(s) that the bot should reply with.
+ */
 function generateGame(gameSettings, isRaw) {
 	let { width, height, numMines, startsNotUncovered } = gameSettings;
 	
