@@ -2,7 +2,7 @@
     "prefix": "!",
     "defaultGameSize": 8,
     "defaultMineCount": 0.2,
-    "maxGameWidth": 25,
+    "maxGameWidth": 24,
     "maxGameHeight": 20,
     "maxAutoChannelInterval": 30240
 }
