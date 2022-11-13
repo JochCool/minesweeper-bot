@@ -24,15 +24,15 @@ The following are text commands only:
 * `/ms`&nbsp;&ndash; alias of `/minesweeper`.
 * `/msraw`&nbsp;&ndash; alias of `/minesweeperraw`.
 
+## Feedback
+My creator is @JochCool#1314. If you have any feedback, questions or other remarks, you can DM him, create an issue on GitHub, or join my Discord support server: https://discord.gg/PCxZrrZ.
+
 ## Q&A
 ### I have gone offline and am not responding to any commands!
 Oh no! Please ping my creator so he can revive me (see the [contact](#Contact) section)!
 
 ### There are no slash commands!
 This may be because you do not have the "Use Application Commands" permission. Otherwise, try re-inviting me to the server (and verify that "Create commands in a server" is checked).
-
-## Contact
-My creator is @JochCool#1314. If you have any questions or other remarks, you can DM him, create an issue on GitHub, or join my Discord support server: https://discord.gg/PCxZrrZ.
 
 ## Installation
 If you want to try my code out or run me on a private bot, that is allowed, as long as you remember that the code is published under an MIT license. This means that you must include the LICENSE file every time you distribute the code.

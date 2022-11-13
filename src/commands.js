@@ -516,7 +516,7 @@ const commands = new CommandArgument(types.root, settings.prefix, null).setOptio
 			for (var i = 0; i < 3 && i < updates.length; i++) {
 				returnTxt += `\nVersion ${updates[i].name} \u2013 ${updates[i].description}`; // U+2015 = en dash
 			}
-			return returnTxt;
+			return returnTxt + "\nSee the GitHub repository if you want to more closely follow development. And you are welome to leave feedback! https://github.com/JochCool/minesweeper-bot";
 		}),
 
 	new CommandArgument(types.command, "ping", "Pong?")
