@@ -253,13 +253,18 @@ class CommandOption extends CommandArgument {
 		this.required = isRequired;
 	}
 
-	// Note: Min and max values are not enforced in text commands right now, only in slash commands by Discord.
+	// Note: these restrictions are not enforced in text commands right now, only in slash commands by Discord.
 	setMinValue(value) {
 		this.min_value = value;
 		return this;
 	}
 	setMaxValue(value) {
 		this.max_value = value;
+		return this;
+	}
+	// For types.channel only
+	setChannelTypes(channelTypes) {
+		this.channel_types = channelTypes;
 		return this;
 	}
 }
@@ -374,7 +379,7 @@ const commands = new CommandArgument(types.root, settings.prefix, null).setOptio
 			return `I will send a Minesweeper game in ${channel} every ${interval} minutes.`;
 		})
 		.setOptions([
-			new CommandOption(types.channel, "channel", "The channel in which to send the games.", true),
+			new CommandOption(types.channel, "channel", "The channel in which to send the games.", true).setChannelTypes([0, 1, 3]),
 			new CommandOption(types.integer, "interval", "The number of minutes between messages. Set this to 0 to make me stop.", true).setMinValue(0).setMaxValue(settings.maxAutoChannelInterval),
 			gameWidthOption,
 			gameHeightOption,
