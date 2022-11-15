@@ -34,6 +34,9 @@ Oh no! Please ping my creator so he can revive me (see the [contact](#Contact) s
 ### There are no slash commands!
 This may be because you do not have the "Use Application Commands" permission. Otherwise, try re-inviting me to the server (and verify that "Create commands in a server" is checked).
 
+### Is there a TOS/privacy policy?
+...asked no one ever. I mean, [yes there is](https://github.com/JochCool/minesweeper-bot/tree/master/legal), because Discord forced my owner to make one, but it does not contain anything surprising because I am a bot that makes minesweeper games.
+
 ## Installation
 If you want to try my code out or run me on a private bot, that is allowed, as long as you remember that the code is published under an MIT license. This means that you must include the LICENSE file every time you distribute the code.
 
