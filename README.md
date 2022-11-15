@@ -1,5 +1,10 @@
 # Minesweeper Bot
-Hello! I'm a verified Discord bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play! [Click here to add me to your server](https://discord.com/api/oauth2/authorize?client_id=540917634695168010&scope=applications.commands%20bot), and then use the command `/minesweeper` to generate a game.
+Hello! I'm a verified Discord bot that can generate a random Minesweeper game using the new spoiler tags, for anyone to play!
+
+* [View me in Discord's App Directory](https://discord.com/application-directory/540917634695168010)
+* [Add me to your server](https://discord.com/api/oauth2/authorize?client_id=540917634695168010&scope=applications.commands%20bot)
+
+Once I am in your server, you can use the command `/minesweeper` to generate a game.
 
 In servers, you can only use [slash commands](https://support.discord.com/hc/en-us/articles/1500000368501-Slash-Commands-FAQ). Discord no longer allows text commands in servers, but you can still use them in a DM with me (the prefix is `!`).
 
@@ -18,18 +23,14 @@ Here's the other commands I listen to:
 * `/news`&nbsp;&ndash; displays info about my latest updates.
 * `/ping`&nbsp;&ndash; displays my heartbeat ping.
 
-The following are text commands only:
-* `/setprefix`&nbsp;&ndash; allows you to change the prefix of all my text commands. Requires Manage Server permission to execute.
-* `/help`&nbsp;&ndash; shows a list of commands.
-* `/ms`&nbsp;&ndash; alias of `/minesweeper`.
-* `/msraw`&nbsp;&ndash; alias of `/minesweeperraw`.
+When using text commands, you can also use the shorthands `ms` or `msraw`, and there is also a `help` command that lists all text commands.
 
 ## Feedback
-My creator is @JochCool#1314. If you have any feedback, questions or other remarks, you can DM him, create an issue on GitHub, or join my Discord support server: https://discord.gg/PCxZrrZ.
+My creator is @JochCool#1314. If you have any feedback, questions or other remarks, you can DM him, [create an issue on GitHub](https://github.com/JochCool/minesweeper-bot/issues/new), or [join my Discord support server](https://discord.gg/PCxZrrZ).
 
 ## Q&A
 ### I have gone offline and am not responding to any commands!
-Oh no! Please ping my creator so he can revive me (see the [contact](#Contact) section)!
+Oh no! Please ping my creator so he can revive me (see [the feedback section](#Feedback) above)!
 
 ### There are no slash commands!
 This may be because you do not have the "Use Application Commands" permission. Otherwise, try re-inviting me to the server (and verify that "Create commands in a server" is checked).
@@ -49,4 +50,4 @@ If you want to try my code out or run me on a private bot, that is allowed, as l
 7. To register the slash commands (optional), type `node setup.js <id>`, and where it says `<id>` paste the application ID from step 1. Note that it may take up to an hour before the commands appear.
 8. Run `node ./` to get me online. Have fun!
 
-If you encounter an error, please [open an issue](https://github.com/JochCool/minesweeper-bot/issues) and my creator will take a look.
+If you encounter an error, please [open an issue](https://github.com/JochCool/minesweeper-bot/issues/new) and my creator will take a look.
