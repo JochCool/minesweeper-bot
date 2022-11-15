@@ -12,7 +12,7 @@ When you run the `/minesweeper` command, I will reply with a grid of spoiler tag
 ## Other Commands
 Here's the other commands I listen to:
 * `/minesweeperraw`&nbsp;&ndash; same as `/minesweeper`, but it gives you the raw text/copypasta so you can share the game.
-* `/auto`&nbsp;&ndash; makes me send a new Minesweeper game at regular intervals in a certain channel. (Requires Manage Channel permissions. You can stop me again by setting the interval to 0.)
+* `/auto`&nbsp;&ndash; makes me send a new Minesweeper game at regular intervals in the channel. (Requires Manage Channel permissions. You can stop me again by setting the interval to 0.)
 * `/info`&nbsp;&ndash; displays info about me.
 * `/howtoplay`&nbsp;&ndash; displays a tutorial about how to play the game.
 * `/news`&nbsp;&ndash; displays info about my latest updates.

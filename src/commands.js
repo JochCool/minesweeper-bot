@@ -454,45 +454,40 @@ const commands = new CommandArgument(types.root, settings.prefix, null).setOptio
 		.setRunFunction((source, inputs) => checkAndGenerateGame(inputs, false))
 		.setOptions(minesweeperOptions),
 
-	new CommandArgument(types.command, "auto", "Creates Minesweeper games at regular intervals.")
+	new CommandArgument(types.command, "auto", "Creates Minesweeper games at regular intervals in this channel.")
 		.setDefaultMemberPermissions("16") // Manage Channels
-		.setRunFunction(async (source, inputs, client) => {
+		.setRunFunction(async (source, inputs) => {
 
-			let interval = inputs[1];
+			let interval = inputs[0];
 			if (interval == 0) {
-				if (AutoChannel.delete(inputs[0])) {
-					return "I will no longer send Minesweeper games in that channel.";
+				if (AutoChannel.delete(source.channelId)) {
+					return "I will no longer send Minesweeper games in this channel.";
 				}
-				return { content: "You set the interval to 0, which means I should stop auto-sending games, but I was not doing that in that channel to begin with.", ephemeral: true };
+				return { content: "You set the interval to 0, which means I should stop auto-sending games, but I was not doing that in this channel to begin with.", ephemeral: true };
 			}
 
 			if (interval < 0) return { content: "I cannot create games in a negative amount of time.", ephemeral: true };
 			if (interval > settings.maxAutoChannelInterval) return { content: "That takes far too long! The maximum is 3 weeks.", ephemeral: true };
 
 			let gameSettings = {
-				width: inputs[2],
-				height: inputs[3],
-				numMines: inputs[4],
-				startsNotUncovered: inputs[5]
+				width: inputs[1],
+				height: inputs[2],
+				numMines: inputs[3],
+				startsNotUncovered: inputs[4]
 			};
-			let error = checkGameSettings(gameSettings);
-			if (error) return { content: error, ephemeral: true };
 
-			let channel = await AutoChannel.tryFetchChannel(client, inputs[0]);
-			if (!(channel instanceof Discord.Channel)) {
-				return { content: channel, ephemeral: true };
-			}
+			let error = AutoChannel.checkChannel(source.channel) || checkGameSettings(gameSettings);
+			if (error) return { content: error, ephemeral: true };
 			
-			AutoChannel.create(channel, interval, gameSettings);
+			AutoChannel.create(source.channel, interval, gameSettings);
 			log("New autochannel created!");
 
 			if (interval == 1) {
-				return `I will send a Minesweeper game in ${channel} every minute.`;
+				return `I will send a Minesweeper game in ${source.channel} every minute.`;
 			}
-			return `I will send a Minesweeper game in ${channel} every ${interval} minutes.`;
+			return `I will send a Minesweeper game in ${source.channel} every ${interval} minutes.`;
 		})
 		.setOptions([
-			new CommandOption(types.channel, "channel", "The channel in which to send the games.", true).setChannelTypes([0, 1, 3]),
 			new CommandOption(types.integer, "interval", "The number of minutes between messages. Set this to 0 to make me stop.", true).setMinValue(0).setMaxValue(settings.maxAutoChannelInterval),
 			gameWidthOption,
 			gameHeightOption,

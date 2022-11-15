@@ -81,19 +81,16 @@ class AutoChannel {
 	}
 
 	/**
-	 * Fetches data for a channel and checks if the bot can send a message in this channel (if not, creates an error message).
-	 * @param {Discord.Client} client The client to use for fetching channel data.
-	 * @param {string} channelId The ID of the channel to fetch.
-	 * @returns {Promise<Discord.Channel|string>} Either the successfully fetched channel or the error message.
+	 * Checks if the bot can send a message in this channel (if not, creates an error message).
+	 * @param {Discord.Channel} channel The channel to check.
+	 * @returns {string|undefined} The error message, if the channel is not valid.
 	 */
-	static async tryFetchChannel(client, channelId) {
-		let channel = await client.channels.fetch(channelId);
-		if (!channel || channel.deleted) return "Cannot find that channel.";
+	static checkChannel(channel) {
+		if (!channel || channel.deleted) return "This channel does not exist.";
 		if (!channel.isText()) return "I can only send in text channels.";
 		if (channel.permissionsFor && !channel.permissionsFor(channel.guild.me).has("SEND_MESSAGES")) {
 			return "I do not have permission to send messages in that channel.";
 		}
-		return channel;
 	}
 
 	/**
@@ -115,9 +112,10 @@ class AutoChannel {
 			return;
 		}
 		for (let channelId in json) {
-			let channel = await this.tryFetchChannel(client, channelId);
-			if (!(channel instanceof Discord.Channel)) {
-				log(`Error with autochannel with ID ${channelId}. ${channel}`);
+			let channel = await client.channels.fetch(channelId);
+			let error = this.checkChannel(channel);
+			if (error) {
+				log(`Error with autochannel with ID ${channelId}. ${error}`);
 				continue;
 			}
 
@@ -126,6 +124,7 @@ class AutoChannel {
 			autoChannels[channelId] = autoChannel;
 			autoChannel.start();
 		}
+		log("All autochannels started.");
 	}
 
 	/**
