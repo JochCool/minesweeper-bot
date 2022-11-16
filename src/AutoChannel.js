@@ -52,18 +52,24 @@ class AutoChannel {
 	 * Starts regularly sending Minesweeper games in the channel. This method must only be called once before calling {@link AutoChannel.stop}.
 	 */
 	start() {
-		this.timeout = setInterval(async () => {
-			let message = generateGame(this.gameSettings);
-			if (Array.isArray(message)) {
-				for (let i = 0; i < message.length; i++) {
-					let success = await this.sendMessage(message[i]);
-					if (!success) return;
-				}
+		this.timeout = setInterval(() => this.sendGame().catch(log), this.interval);
+	}
+
+	/**
+	 * Sends a Minesweeper game in the Discord channel that this autochannel is for.
+	 * @private
+	 */
+	async sendGame() {
+		let message = generateGame(this.gameSettings);
+		if (Array.isArray(message)) {
+			for (let i = 0; i < message.length; i++) {
+				let success = await this.sendMessage(message[i]);
+				if (!success) return;
 			}
-			else {
-				await this.sendMessage(message);
-			}
-		}, this.interval);
+		}
+		else {
+			await this.sendMessage(message);
+		}
 	}
 
 	/**
@@ -144,8 +150,14 @@ class AutoChannel {
 
 			let autoChannel = Object.assign(new AutoChannel(), json[channelId]);
 			autoChannel.channel = channel;
+			autoChannel.startTime = new Date(autoChannel.startTime);
+			
+			autoChannel.timeout = setTimeout(() => {
+				autoChannel.start();
+				autoChannel.sendGame().catch(log);
+			}, autoChannel.interval - (new Date() - autoChannel.startTime) % autoChannel.interval);
+			
 			autoChannels[channelId] = autoChannel;
-			autoChannel.start();
 		}
 		log("All autochannels started.");
 	}
