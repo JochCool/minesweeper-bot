@@ -4,5 +4,5 @@
     "defaultMineCount": 0.2,
     "maxGameWidth": 24,
     "maxGameHeight": 20,
-    "maxAutoChannelInterval": 30240
+    "maxAutoChannelIntervalMinutes": 30240
 }

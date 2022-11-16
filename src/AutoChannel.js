@@ -18,7 +18,7 @@ class AutoChannel {
 	/**
 	 * Constructs an AutoChannel. Normally this should be called through {@link AutoChannel.create}.
 	 * @param {Discord.Channel} channel The Discord channel to send the games in.
-	 * @param {number} interval The number of minutes between sending games.
+	 * @param {number} interval The number of milliseconds between sending games.
 	 * @param {import("./generateGame.js").GameSettings} gameSettings The settings of the games.
 	 */
 	constructor(channel, interval, gameSettings) {
@@ -36,7 +36,7 @@ class AutoChannel {
 		this.channel = channel;
 
 		/**
-		 * The number of minutes between sending games.
+		 * The number of milliseconds between sending games.
 		 * @type {number}
 		 */
 		this.interval = interval;
@@ -63,7 +63,7 @@ class AutoChannel {
 			else {
 				await this.sendMessage(message);
 			}
-		}, this.interval * 60000);
+		}, this.interval);
 	}
 
 	/**
@@ -162,7 +162,7 @@ class AutoChannel {
 	/**
 	 * Creates an AutoChannel and starts it.
 	 * @param {Discord.Channel} channel The Discord channel to send the games in.
-	 * @param {number} interval The number of minutes between sending games.
+	 * @param {number} interval The number of milliseconds between sending games.
 	 * @param {import("./generateGame.js").GameSettings} gameSettings The settings of the games.
 	 */
 	static create(channel, interval, gameSettings) {

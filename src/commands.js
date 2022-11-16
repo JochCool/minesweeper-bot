@@ -467,7 +467,7 @@ const commands = new CommandArgument(types.root, settings.prefix, null).setOptio
 			}
 
 			if (interval < 0) return { content: "I cannot create games in a negative amount of time.", ephemeral: true };
-			if (interval > settings.maxAutoChannelInterval) return { content: "That takes far too long! The maximum is 3 weeks.", ephemeral: true };
+			if (interval > settings.maxAutoChannelIntervalMinutes) return { content: "That takes far too long! The maximum is 3 weeks.", ephemeral: true };
 
 			let gameSettings = {
 				width: inputs[1],
@@ -479,7 +479,7 @@ const commands = new CommandArgument(types.root, settings.prefix, null).setOptio
 			let error = AutoChannel.checkChannel(source.channel) || checkGameSettings(gameSettings);
 			if (error) return { content: error, ephemeral: true };
 			
-			AutoChannel.create(source.channel, interval, gameSettings);
+			AutoChannel.create(source.channel, interval * 60000, gameSettings);
 			log("New autochannel created!");
 
 			if (interval == 1) {
@@ -488,7 +488,7 @@ const commands = new CommandArgument(types.root, settings.prefix, null).setOptio
 			return `I will send a Minesweeper game in ${source.channel} every ${interval} minutes.`;
 		})
 		.setOptions([
-			new CommandOption(types.integer, "interval", "The number of minutes between messages. Set this to 0 to make me stop.", true).setMinValue(0).setMaxValue(settings.maxAutoChannelInterval),
+			new CommandOption(types.integer, "interval", "The number of minutes between messages. Set this to 0 to make me stop.", true).setMinValue(0).setMaxValue(settings.maxAutoChannelIntervalMinutes),
 			gameWidthOption,
 			gameHeightOption,
 			numMinesOption,
