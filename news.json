@@ -1,4 +1,5 @@
 [
+	{ "name": "1.10", "description": "Added `/auto` command, to regularly send games in a channel (thanks to INotSleep). Also fixed a long-standing bug with some squares being missing in large games. Sadly I had to reduce the max game width to 24." },
 	{ "name": "1.9", "description": "Added slash commands! Note: starting April 2022, Discord forces you to use them instead of text commands." },
 	{ "name": "1.8", "description": "There is now also an option to start games without having the first region uncovered. Plus some minor fixes." },
 	{ "name": "1.7", "description": "When you create a game, I will now automatically uncover the first region for you." },

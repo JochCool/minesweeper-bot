@@ -1,38 +1,53 @@
 // This function is the heart of the bot; it generates the Minesweeper game. It gets called whenever the minesweeper command is executed.
 
+const settings = require("../settings.json");
+
 // If you add these xy values to some other coordinate, you'll get the eight neighbours of that coordinate.
 const neighbourLocations = [{x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1}, {x: 1, y: 0}, {x: 1, y: 1}, {x: 0, y: 1}, {x: -1, y: 1}, {x: -1, y: 0}];
 
 const numberEmoji = [":zero:", ":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":nine:"];
 
-// Returns the text that the bot should reply with based on the given inputs.
-module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, startsNotUncovered) {
-	
-	/** ──────── CHECKS ──────── **/
-	
-	// Check game size and construct error message if needed
+/**
+ * Contains the settings for a Minesweeper game.
+ * @typedef {Object} GameSettings
+ * @property {number} width The width of the game.
+ * @property {number} height The height of the game.
+ * @property {number} numMines The number of mines in the game.
+ * @property {boolean} startsNotUncovered Whether the game should *not* start partially uncovered.
+ */
+
+/**
+ * Checks if game settings are valid, and creates an error message if not.
+ * @param {GameSettings} gameSettings The settings to check. This object may be modified.
+ * @returns {string|undefined} The error message, if the game settings are invalid.
+ */
+function checkGameSettings(gameSettings) {
+
 	let tooSmall;
 	let tooLarge;
-	if (isNaN(gameWidth)) {
-		gameWidth = isNaN(gameHeight) ? 8 : gameHeight;
+
+	if (isNaN(gameSettings.width)) {
+		gameSettings.width = isNaN(gameSettings.height) ? settings.defaultGameSize : gameSettings.height;
 	}
-	else if (gameWidth <= 0) {
-		tooSmall = gameWidth + " squares wide";
+	else if (gameSettings.width <= 0) {
+		tooSmall = gameSettings.width + " squares wide";
 	}
-	else if (gameWidth > 40) {
+	else if (gameSettings.width > settings.maxGameWidth) {
 		tooLarge = "wide";
 	}
-	if (isNaN(gameHeight)) {
-		gameHeight = gameWidth;
+
+	if (isNaN(gameSettings.height)) {
+		gameSettings.height = gameSettings.width;
 	}
-	else if (gameHeight <= 0) {
-		if (tooSmall) tooSmall = `sized ${gameWidth} by ${gameHeight}`;
-		else          tooSmall = gameHeight + " squares high";
+	else if (gameSettings.height <= 0) {
+		if (tooSmall) tooSmall = `sized ${gameSettings.width} by ${gameSettings.height}`;
+		else          tooSmall = gameSettings.height + " squares high";
 	}
-	else if (gameHeight > 20) {
+	else if (gameSettings.height > settings.maxGameHeight) {
 		if (tooLarge) tooLarge = "large";
 		else          tooLarge = "tall";
 	}
+
 	if (tooSmall) {
 		return `Uh, I'm not smart enough to generate a game ${tooSmall}. I can only use positive numbers. Sorry :cry:`;
 	}
@@ -41,39 +56,48 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 	}
 	
 	// Check mine count
-	if (isNaN(numMines)) {
-		numMines = Math.round(gameWidth * gameHeight / 5);
+	if (isNaN(gameSettings.numMines)) {
+		gameSettings.numMines = Math.round(gameSettings.width * gameSettings.height * settings.defaultMineCount);
 	}
-	else if (numMines <= 0) {
+	else if (gameSettings.numMines <= 0) {
 		return "You think you can look clever by solving a Minesweeper game without mines? Not gonna happen my friend.";
 	}
-	else if (numMines > gameWidth * gameHeight) {
-		return `I can't fit that many mines in a game sized ${gameWidth}x${gameHeight}!`;
+	else if (gameSettings.numMines > gameSettings.width * gameSettings.height) {
+		return `I can't fit that many mines in a game sized ${gameSettings.width}x${gameSettings.height}!`;
 	}
+}
+
+/**
+ * Returns the text that the bot should reply with based on the given settings (that are already assumed to be valid).
+ * @param {GameSettings} gameSettings The settings of the game (must already have been validated).
+ * @param {boolean} isRaw True if the game should be within a code block; otherwise, false.
+ * @returns {string|Array<string>} The message(s) that the bot should reply with.
+ */
+function generateGame(gameSettings, isRaw) {
+	let { width, height, numMines, startsNotUncovered } = gameSettings;
 	
 	/** ──────── CREATE GAME ──────── **/
 	
-	// 2D array that contains the game, sorted [y][x]. -1 means a mine, positive number is the amount of neighbouring mines
-	var game = [];
+	// 2D array that contains the game, sorted [y][x]. -1 means a mine, positive number is the amount of neighbouring mines.
+	let game = [];
 	
 	// Initialise the game array with zeroes
-	for (var y = 0; y < gameHeight; y++) {
+	for (let y = 0; y < height; y++) {
 		game.push([]);
-		for (var x = 0; x < gameWidth; x++) {
+		for (let x = 0; x < width; x++) {
 			game[y].push(0);
 		}
 	}
 	
-	// Takes in an object with x and y properties
-	function coordIsInGame(coord) {
-		return coord.y >= 0 && coord.y < game.length &&
-		       coord.x >= 0 && coord.x < game[coord.y].length;
+	function coordIsInGame(x, y) {
+		return y >= 0 && y < game.length &&
+		       x >= 0 && x < game[y].length;
 	};
 	
 	// Fill the game with mines!
-	for (var mine = 0; mine < numMines; mine++) {
-		var x = Math.floor(Math.random()*gameWidth),
-		    y = Math.floor(Math.random()*gameHeight);
+	for (let mine = 0; mine < numMines; mine++) {
+		let x = Math.floor(Math.random()*width),
+		    y = Math.floor(Math.random()*height);
 		
 		// Retry if there was already a mine there
 		if (game[y][x] === -1) {
@@ -83,39 +107,30 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 		
 		game[y][x] = -1;
 		
-		// Add 1 to neighbouring tiles
-		for (var j = 0; j < neighbourLocations.length; j++) {
-			let newCoord = {x: x + neighbourLocations[j].x, y: y + neighbourLocations[j].y};
-			if (coordIsInGame(newCoord) && game[newCoord.y][newCoord.x] !== -1) {
-				game[newCoord.y][newCoord.x]++;
+		// Add 1 to all neighbouring tiles
+		for (let j = 0; j < neighbourLocations.length; j++) {
+			let newX = x + neighbourLocations[j].x;
+			let newY = y + neighbourLocations[j].y;
+			if (coordIsInGame(newX, newY) && game[newY][newX] !== -1) {
+				game[newY][newX]++;
 			}
 		}
-		
-		/* Old code (easier to understand):
-		if (x > 0                && y > 0             && game[y-1][x-1] !== -1) { game[y-1][x-1]++; }
-		if (                        y > 0             && game[y-1][x  ] !== -1) { game[y-1][x  ]++; }
-		if (x < game[y].length-1 && y > 0             && game[y-1][x+1] !== -1) { game[y-1][x+1]++; }
-		if (x < game[y].length-1                      && game[y  ][x+1] !== -1) { game[y  ][x+1]++; }
-		if (x < game[y].length-1 && y < game.length-1 && game[y+1][x+1] !== -1) { game[y+1][x+1]++; }
-		if (                        y < game.length-1 && game[y+1][x  ] !== -1) { game[y+1][x  ]++; }
-		if (x > 0                && y < game.length-1 && game[y+1][x-1] !== -1) { game[y+1][x-1]++; }
-		if (x > 0                                     && game[y  ][x-1] !== -1) { game[y  ][x-1]++; }
-		//*/
 	}
 	
 	/** ──────── UNCOVERING ──────── **/
 	
-	// Initialise vars
-	let zeroLocations = []; // Array of {x,y} objects, will contain locations of all zeroes in the game
-	let uncoveredLocations = []; // 2D array, each value is either nothing (not uncovered) or true (uncovered)
-	for (var y = 0; y < game.length; y++) {
+	// 2D array, each value is either falsy (not uncovered) or true (uncovered)
+	let uncoveredLocations = [];
+	for (let y = 0; y < game.length; y++) {
 		uncoveredLocations.push([]);
 	}
 	
 	if (!startsNotUncovered) {
-		// Find all the zeroes in this game
-		for (var y = 0; y < game.length; y++) {
-			for (var x = 0; x < game[y].length; x++) {
+
+		// Find the coordinates of all zeroes in the game (array will contain objects with x and y properties)
+		let zeroLocations = [];
+		for (let y = 0; y < game.length; y++) {
+			for (let x = 0; x < game[y].length; x++) {
 				if (game[y][x] === 0) {
 					zeroLocations.push({x: x, y: y});
 				}
@@ -133,15 +148,16 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 			
 			// Uncover neighbouring tiles
 			while (locationsToUncover.length > 0) {
-				for (var j = 0; j < neighbourLocations.length; j++) {
+				for (let j = 0; j < neighbourLocations.length; j++) {
 					
-					let newCoord = {x: locationsToUncover[0].x + neighbourLocations[j].x, y: locationsToUncover[0].y + neighbourLocations[j].y};
-					if (!coordIsInGame(newCoord) || uncoveredLocations[newCoord.y][newCoord.x] === true) continue;
-					uncoveredLocations[newCoord.y][newCoord.x] = true;
+					let newX = locationsToUncover[0].x + neighbourLocations[j].x;
+					let newY = locationsToUncover[0].y + neighbourLocations[j].y;
+					if (!coordIsInGame(newX, newY) || uncoveredLocations[newY][newX]) continue;
+					uncoveredLocations[newY][newX] = true;
 					
 					// Continue uncovering
-					if (game[newCoord.y][newCoord.x] === 0) {
-						locationsToUncover.push(newCoord);
+					if (game[newY][newX] === 0) {
+						locationsToUncover.push({ x: newX, y: newY });
 					}
 				}
 				locationsToUncover.shift();
@@ -151,53 +167,60 @@ module.exports = function generateGame(gameWidth, gameHeight, numMines, isRaw, s
 	
 	/** ──────── CREATE REPLY ──────── **/
 	
-	let returnTxt;
-	if (numMines === 1) returnTxt = `Here's a board sized ${gameWidth}x${gameHeight} with 1 mine:`;
-	else                returnTxt = `Here's a board sized ${gameWidth}x${gameHeight} with ${numMines} mines:`;
+	let messages; // will be an array in case the message needs to be split up
+	let message;
+	if (numMines === 1) message = `Here's a board sized ${width}x${height} with 1 mine:`;
+	else                message = `Here's a board sized ${width}x${height} with ${numMines} mines:`;
 	
-	if (isRaw) { returnTxt += "\n```"; }
+	if (isRaw) message += "\n```";
+
+	// For some stupid reason, Discord cuts off the message on the 200th emoji or spoiler tag (200 "symbol"s).
+	// Therefore, keep track of them and split the message up in case it's too many
+	let symbolCount = 0;
 	
-	for (var y = 0; y < game.length; y++) {
-		returnTxt += "\n"
-		for (var x = 0; x < game[y].length; x++) {
+	for (let y = 0; y < game.length; y++) {
+		let newLine = "";
+		let newSymbolCount = 0;
+		for (let x = 0; x < game[y].length; x++) {
 			if (game[y][x] === -1) {
-				returnTxt += "||:bomb:||";
+				newLine += "||:bomb:||";
+				newSymbolCount += 2;
 			}
 			else if (!startsNotUncovered && uncoveredLocations[y][x]) {
-				returnTxt += numberEmoji[game[y][x]];
+				newLine += numberEmoji[game[y][x]];
+				newSymbolCount += 1;
 			}
 			else {
-				returnTxt += `||${numberEmoji[game[y][x]]}||`;
+				newLine += `||${numberEmoji[game[y][x]]}||`;
+				newSymbolCount += 2;
 			}
 		}
+		// Split up if there's either too many characters or too many emoji/spoilers
+		if (message.length + newLine.length >= 1996 || symbolCount + newSymbolCount >= 200) {
+			if (!messages) messages = [];
+			if (isRaw) {
+				message += "\n```";
+				newLine = "```\n" + newLine;
+			}
+			messages.push(message);
+			message = newLine;
+			symbolCount = newSymbolCount;
+		}
+		else {
+			message += "\n" + newLine;
+			symbolCount += newSymbolCount;
+		}
 	}
 	
-	if (isRaw) { returnTxt += "\n```"; }
-	
-	// Send the message if it's not longer than 2000 chars (Discord's limit)
-	if (returnTxt.length <= 2000) {
-		return returnTxt;
+	if (isRaw) message += "\n```";
+	if (messages) {
+		messages.push(message);
+		return messages;
 	}
-	
-	// Otherwise, split the message
-	let splitReturns = [];
-	do {
-		let splitIndex = returnTxt.substring(0, 1900).lastIndexOf("\n");
-		if (splitIndex === -1) {
-			log("A too large message was generated after creating a game.");
-			return "Sorry, your message appears to be too large to send (because of Discord's character limit). Please try a smaller game next time.";
-		}
-		splitReturns.push(returnTxt.substring(0, splitIndex));
-		returnTxt = returnTxt.substring(splitIndex+1);
-		
-		// Also split the triple backticks
-		if (isRaw) {
-			splitReturns[splitReturns.length-1] += "\n```";
-			returnTxt = "```\n" + returnTxt;
-		}
-	} while (returnTxt.length > 1900)
-	
-	splitReturns.push(returnTxt);
-	
-	return splitReturns;
+	return message;
+};
+
+module.exports = {
+	generateGame: generateGame,
+	checkGameSettings: checkGameSettings
 };

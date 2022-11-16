@@ -1,6 +1,6 @@
 // Welcome to the Minesweeper Bot source code!
 // What you're probably looking for is the generateGame.js file, which contains the actually minesweeper-related code.
-// This code manages the bot's connection and interprets commands.
+// The code in this file manages the bot's connection and interprets commands.
 
 const package = require("../package.json");
 const log = require("./log.js");
@@ -8,20 +8,21 @@ const log = require("./log.js");
 log(`Starting Minesweeper Bot version ${package.version}`);
 
 /** ───── BECOME A DISCORD BOT ───── **/
-// This section is to load the modules, initialise the bot and create some general functions
+// This section is to load the modules, initialise the bot and create some general functions.
 
 // Load everything
 const Discord = require("discord.js");
 const auth = require("../auth.json");
+const settings = require("../settings.json");
 const commands = require("./commands.js");
-const guildprefixes = require("./guildprefixes.js");
+const AutoChannel = require("./AutoChannel.js");
 
 log("All modules loaded");
 
 // Censored bot token?
 if (!auth.bottoken || auth.bottoken == "CENSORED") {
-	log("Please fill in the token of your Discord Bot (can be found at https://discordapp.com/developers/applications).");
-	process.exit();
+	log("Please fill in the token of your Discord bot (can be found at https://discordapp.com/developers/applications).");
+	return;
 }
 
 // Initialise Discord bot
@@ -38,7 +39,7 @@ const client = new Discord.Client({
 		activities: [
 			{
 				type: "PLAYING",
-				name: "minesweeper"
+				name: "Minesweeper"
 			}
 		]
 	},
@@ -52,7 +53,7 @@ const client = new Discord.Client({
 client.login(auth.bottoken).catch(log);
 
 // Initalise connetion with the Top.gg API
-if (auth.dbltoken && auth.topggtoken != "CENSORED") {
+if (auth.topggtoken && auth.topggtoken != "CENSORED") {
 	require("topgg-autoposter").AutoPoster(auth.topggtoken, client).on("error", log);
 }
 else {
@@ -64,15 +65,16 @@ function getGuildCount() {
 };
 
 // setup for hourly reports in the log
+var messagesThisHour = 0;
 var commandsThisHour = 0;
 var reconnectsThisHour = 0;
 function report() {
-	log(`Hourly report: ${commandsThisHour} commands, ${reconnectsThisHour} reconnects.`);
+	log(`Hourly report: ${messagesThisHour} messages, ${commandsThisHour} commands, ${reconnectsThisHour} reconnects.`);
+	messagesThisHour = 0;
 	commandsThisHour = 0;
 	reconnectsThisHour = 0;
 	setTimeout(report, getTimeUntilNextHour());
 };
-// This function appears to work but time is weird and hard to test so if there is an oversight please tell me
 function getTimeUntilNextHour() {
 	let now = new Date();
 	return (59 - now.getMinutes())*60000 + (60 - now.getSeconds())*1000;
@@ -81,10 +83,14 @@ function getTimeUntilNextHour() {
 setTimeout(report, getTimeUntilNextHour());
 
 // Misc event handlers
-// IMPORTANT: WHEN ADDING EVENTS, DO NOT FORGET TO ALSO CHECK THE GATEWAY INTENTS IN THE CLIENT CONSTRUCTOR
 
 client.on("ready", () => {
 	log(`Ready! Current guild count: ${getGuildCount()}`);
+
+	AutoChannel.loadAndStartAll(client).catch(err => {
+		log("WARNING: FAILED TO LOAD AUTOCHANNELS");
+		log(err);
+	})
 });
 
 client.on("disconnected", event => {
@@ -93,15 +99,8 @@ client.on("disconnected", event => {
 });
 
 client.on("reconnecting", () => {
-	//log("Reconnecting...");
 	reconnectsThisHour++;
 });
-
-/*
-client.on("resume", replayed => {
-	log(`Resumed! Replayed ${replayed} events.`);
-});
-//*/
 
 client.on("ratelimit", info => {
 	log("Being ratelimited! Info:");
@@ -131,31 +130,32 @@ client.on("guildDelete", guild => {
 });
 
 /** ───── COMMAND PARSER ───── **/
-// This section is to evaluate your commands and reply to your commands
+// This section is to evaluate your commands and reply to your commands.
 
 client.on('messageCreate', message => {
-	
 	if (message.author.bot) {
 		return;
 	}
+
+	messagesThisHour++;
+
 	if (message.guild) {
 		if (!message.guild.available) {
 			return;
 		}
-		let permissions = message.channel.memberPermissions(message.guild.me);
+		let permissions = message.channel.permissionsFor(message.guild.me);
 		if (!permissions.has("SEND_MESSAGES")) {
 			return;
 		}
 		if (!permissions.has("READ_MESSAGE_HISTORY")) {
-			// Replying isn't allowed without this permission; send a regular message instead
+			// Replying isn't allowed without this permission; send a regular message instead.
 			message.reply = content => message.channel.send(content);
 		}
 	}
 	
 	// Commands
-	let prefix = guildprefixes.getPrefix(message.guild);
-	if (message.content.startsWith(prefix)) {
-		respondToCommand(message, message.content.substring(prefix.length).trim());
+	if (message.content.startsWith(settings.prefix)) {
+		respondToCommand(message, message.content.substring(settings.prefix.length).trim());
 	}
 });
 
@@ -165,15 +165,31 @@ client.on('interactionCreate', interaction => {
 	}
 });
 
-// For text commands, 'command' will be the whole command, for interactions it'll be only the command name and 'options' contains the rest.
+/**
+ * Executes a command and responds.
+ * @param {Discord.Message|Discord.CommandInteraction} source The Discord message or slash command interaction that triggered this command.
+ * @param {string} command The command to execute. For text commands, this is the whole command; for interactions it is only the command name and 'options' contains the rest.
+ * @param {Discord.CommandInteractionOptionResolver} [options] For slash commands, the options specified.
+ * @returns {Promise<void>}
+ */
 async function respondToCommand(source, command, options) {
 	let result = executeCommand(source, command, options);
 	if (!result) {
 		return;
 	}
+	if (result instanceof Promise) {
+		result = await result;
+	}
 	commandsThisHour++;
+
+	// Multiple messages: the first one is a reply, the rest is regular messages.
 	if (Array.isArray(result)) {
 		if (result.length == 0) {
+			return;
+		}
+		// Check if the regular messages can be sent
+		if (result.length > 1 && source.guild && !source.channel.permissionsFor(source.guild.me).has("SEND_MESSAGES")) {
+			source.reply("The response exceeds Discord's character limit.").catch(log);
 			return;
 		}
 		try {
@@ -190,6 +206,11 @@ async function respondToCommand(source, command, options) {
 		source.reply(convertMessage(result)).catch(log);
 	}
 
+	/**
+	 * Modifies a message to make it ready for sending.
+	 * @param {string|Discord.MessageOptions} message The message to convert.
+	 * @returns {Discord.MessageOptions} The modified message.
+	 */
 	function convertMessage(message) {
 		if (typeof message == "string") {
 			message = { content: message };
@@ -199,6 +220,13 @@ async function respondToCommand(source, command, options) {
 	}
 }
 
+/**
+ * Executes a command.
+ * @param {Discord.Message|Discord.CommandInteraction} source The Discord message or slash command interaction that triggered this command.
+ * @param {string} command The command to execute.
+ * @param {Discord.CommandInteractionOptionResolver} [options] For slash commands, the options specified.
+ * @returns {string|Discord.MessageOptions|Array<string|Discord.MessageOptions>|Promise<string>|Promise<Discord.MessageOptions>|Promise<Array<string|Discord.MessageOptions>>} The message to reply with.
+ */
 function executeCommand(source, command, options) {
 	try {
 		//log("Executing command: "+command);
@@ -222,7 +250,17 @@ function executeCommand(source, command, options) {
 		if (!argument) {
 			return;
 		}
-		
+
+		// Check permissions
+		if (argument.default_member_permissions) {
+			if (!source.guild) {
+				return { content: "This command can only be used in a server.", ephemeral: true };
+			}
+			if (!source.member.permissions.has(argument.default_member_permissions)) {
+				return { content: "You do not have permsision to use this command.", ephemeral: true };
+			}
+		}
+
 		// Get the options
 		let inputs = [];
 		if (argument.options) {
@@ -285,5 +323,3 @@ function executeCommand(source, command, options) {
 		return { content: "An unknown error occurred while evaluating your command.", ephemeral: true };
 	}
 };
-
-// The generateGame function and the command tree used to be here, but they have been moved to their own files.
