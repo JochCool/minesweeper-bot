@@ -52,17 +52,40 @@ class AutoChannel {
 	 * Starts regularly sending Minesweeper games in the channel. This method must only be called once before calling {@link AutoChannel.stop}.
 	 */
 	start() {
-		this.timeout = setInterval(() => {
+		this.timeout = setInterval(async () => {
 			let message = generateGame(this.gameSettings);
 			if (Array.isArray(message)) {
 				for (let i = 0; i < message.length; i++) {
-					this.channel.send(message[i]).catch(log);
+					let success = await this.sendMessage(message[i]);
+					if (!success) return;
 				}
 			}
 			else {
-				this.channel.send(message).catch(log);
+				await this.sendMessage(message);
 			}
 		}, this.interval * 60000);
+	}
+
+	/**
+	 * Sends a message in the Discord channel that this autochannel is for.
+	 * @private
+	 * @param {string} text The message to send.
+	 * @returns {Promise<boolean>} Whether this message was successfully sent.
+	 */
+	async sendMessage(text) {
+		try {
+			await this.channel.send(text);
+			return true;
+		}
+		catch (err) {
+			log("Auto message failed:");
+			log(err);
+			if (err instanceof Discord.DiscordAPIError) {
+				// This likely means that the bot is not allowed to send messages here, so stop the autochannel to prevent more errors.
+				AutoChannel.delete(this.channel.id);
+			}
+			return false;
+		}
 	}
 
 	/**
@@ -89,7 +112,7 @@ class AutoChannel {
 		if (!channel || channel.deleted) return "This channel does not exist.";
 		if (!channel.isText()) return "I can only send in text channels.";
 		if (channel.permissionsFor && !channel.permissionsFor(channel.guild.me).has("SEND_MESSAGES")) {
-			return "I do not have permission to send messages in that channel.";
+			return "I do not have permission to send messages in this channel.";
 		}
 	}
 
