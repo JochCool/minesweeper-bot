@@ -80,7 +80,14 @@ class AutoChannel {
 	 */
 	async sendMessage(text) {
 		try {
-			await this.channel.send(text);
+			let message = await this.channel.send(text);
+			
+			// In the support server, there is an announcement autochannel where the messages should be crossposted.
+			// Join the support server to see: https://discord.gg/PCxZrrZ
+			if (this.channel.id == "1042572396864999534") {
+				await message.crosspost();
+			}
+			
 			return true;
 		}
 		catch (err) {
